@@ -3,7 +3,7 @@ package server
 import (
 	"net/http"
 
-	"github.com/zero-color/line-messaging-api-emulator/api"
+	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
 )
 
 func (s server) CreateRichMenu(w http.ResponseWriter, r *http.Request) {
@@ -56,7 +56,7 @@ func (s server) GetRichMenuList(w http.ResponseWriter, r *http.Request) {
 	panic("implement me")
 }
 
-func (s server) GetRichMenuBatchProgress(w http.ResponseWriter, r *http.Request, params api.GetRichMenuBatchProgressParams) {
+func (s server) GetRichMenuBatchProgress(w http.ResponseWriter, r *http.Request, params messagingapi.GetRichMenuBatchProgressParams) {
 	//TODO implement me
 	panic("implement me")
 }

@@ -1,21 +1,14 @@
 package server
 
 import (
-	"net/http"
-
-	"github.com/zero-color/line-messaging-api-emulator/api"
+	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
 )
 
 type server struct {
 }
 
-var _ api.ServerInterface = (*server)(nil)
+var _ messagingapi.ServerInterface = (*server)(nil)
 
-func New() api.ServerInterface {
+func New() messagingapi.ServerInterface {
 	return &server{}
-}
-
-func (s server) GetBotInfo(w http.ResponseWriter, r *http.Request) {
-	//TODO implement me
-	panic("implement me")
 }

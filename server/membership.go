@@ -3,7 +3,7 @@ package server
 import (
 	"net/http"
 
-	"github.com/zero-color/line-messaging-api-emulator/api"
+	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
 )
 
 func (s server) GetMembershipList(w http.ResponseWriter, r *http.Request) {
@@ -16,7 +16,7 @@ func (s server) GetMembershipSubscription(w http.ResponseWriter, r *http.Request
 	panic("implement me")
 }
 
-func (s server) GetJoinedMembershipUsers(w http.ResponseWriter, r *http.Request, membershipId int, params api.GetJoinedMembershipUsersParams) {
+func (s server) GetJoinedMembershipUsers(w http.ResponseWriter, r *http.Request, membershipId int, params messagingapi.GetJoinedMembershipUsersParams) {
 	//TODO implement me
 	panic("implement me")
 }

@@ -3,7 +3,7 @@ package server
 import (
 	"net/http"
 
-	"github.com/zero-color/line-messaging-api-emulator/api"
+	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
 )
 
 func (s server) LeaveGroup(w http.ResponseWriter, r *http.Request, groupId string) {
@@ -21,7 +21,7 @@ func (s server) GetGroupMemberCount(w http.ResponseWriter, r *http.Request, grou
 	panic("implement me")
 }
 
-func (s server) GetGroupMembersIds(w http.ResponseWriter, r *http.Request, groupId string, params api.GetGroupMembersIdsParams) {
+func (s server) GetGroupMembersIds(w http.ResponseWriter, r *http.Request, groupId string, params messagingapi.GetGroupMembersIdsParams) {
 	//TODO implement me
 	panic("implement me")
 }

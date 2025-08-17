@@ -3,10 +3,10 @@ package server
 import (
 	"net/http"
 
-	"github.com/zero-color/line-messaging-api-emulator/api"
+	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
 )
 
-func (s server) GetFollowers(w http.ResponseWriter, r *http.Request, params api.GetFollowersParams) {
+func (s server) GetFollowers(w http.ResponseWriter, r *http.Request, params messagingapi.GetFollowersParams) {
 	//TODO implement me
 	panic("implement me")
 }

@@ -3,35 +3,35 @@ package server
 import (
 	"net/http"
 
-	"github.com/zero-color/line-messaging-api-emulator/api"
+	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
 )
 
-func (s server) Broadcast(w http.ResponseWriter, r *http.Request, params api.BroadcastParams) {
+func (s server) Broadcast(w http.ResponseWriter, r *http.Request, params messagingapi.BroadcastParams) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s server) Multicast(w http.ResponseWriter, r *http.Request, params api.MulticastParams) {
+func (s server) Multicast(w http.ResponseWriter, r *http.Request, params messagingapi.MulticastParams) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s server) Narrowcast(w http.ResponseWriter, r *http.Request, params api.NarrowcastParams) {
+func (s server) Narrowcast(w http.ResponseWriter, r *http.Request, params messagingapi.NarrowcastParams) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s server) GetNarrowcastProgress(w http.ResponseWriter, r *http.Request, params api.GetNarrowcastProgressParams) {
+func (s server) GetNarrowcastProgress(w http.ResponseWriter, r *http.Request, params messagingapi.GetNarrowcastProgressParams) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s server) PushMessage(w http.ResponseWriter, r *http.Request, params api.PushMessageParams) {
+func (s server) PushMessage(w http.ResponseWriter, r *http.Request, params messagingapi.PushMessageParams) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s server) PushMessagesByPhone(w http.ResponseWriter, r *http.Request, params api.PushMessagesByPhoneParams) {
+func (s server) PushMessagesByPhone(w http.ResponseWriter, r *http.Request, params messagingapi.PushMessagesByPhoneParams) {
 	//TODO implement me
 	panic("implement me")
 }

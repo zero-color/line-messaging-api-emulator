@@ -3,10 +3,10 @@ package server
 import (
 	"net/http"
 
-	"github.com/zero-color/line-messaging-api-emulator/api"
+	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
 )
 
-func (s server) ListCoupon(w http.ResponseWriter, r *http.Request, params api.ListCouponParams) {
+func (s server) ListCoupon(w http.ResponseWriter, r *http.Request, params messagingapi.ListCouponParams) {
 	//TODO implement me
 	panic("implement me")
 }
