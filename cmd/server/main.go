@@ -44,7 +44,7 @@ func realMain() error {
 	r := chi.NewRouter()
 
 	httpServer := &http.Server{
-		Handler: messagingapi.HandlerFromMux(s, r)h,
+		Handler: messagingapi.HandlerFromMux(s, r),
 		Addr:    fmt.Sprintf("0.0.0.0:%d", opts.Port),
 	}
 
