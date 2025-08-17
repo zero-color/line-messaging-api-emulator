@@ -3,11 +3,14 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/go-chi/chi/v5"
-	"github.com/jessevdk/go-flags"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/jessevdk/go-flags"
+	"github.com/zero-color/line-messaging-api-emulator/api"
+	"github.com/zero-color/line-messaging-api-emulator/server"
 )
 
 type options struct {
@@ -34,9 +37,14 @@ func realMain() error {
 		}
 		return fmt.Errorf("failed to parse flags: %w", err)
 	}
-	r := chi.NewRouter()
 
-	log.Println("Starting server on port:", opts.Port)
+	logger := slog.Default()
+
+	s := server.New()
+	r := chi.NewRouter()
+	api.HandlerFromMux(s, r)
+
+	logger.Info("Starting server", slog.Int("port", int(opts.Port)))
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", opts.Port), r); err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
