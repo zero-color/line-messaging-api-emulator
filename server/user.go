@@ -1,22 +1,25 @@
 package server
 
 import (
-	"net/http"
+	"context"
 
 	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
 )
 
-func (s *server) GetFollowers(w http.ResponseWriter, r *http.Request, params messagingapi.GetFollowersParams) {
+// GetProfile gets user profile information
+func (s *server) GetProfile(ctx context.Context, request messagingapi.GetProfileRequestObject) (messagingapi.GetProfileResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) GetProfile(w http.ResponseWriter, r *http.Request, userId string) {
+// GetFollowers gets follower IDs
+func (s *server) GetFollowers(ctx context.Context, request messagingapi.GetFollowersRequestObject) (messagingapi.GetFollowersResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) IssueLinkToken(w http.ResponseWriter, r *http.Request, userId string) {
+// IssueLinkToken issues a link token for account linking
+func (s *server) IssueLinkToken(ctx context.Context, request messagingapi.IssueLinkTokenRequestObject) (messagingapi.IssueLinkTokenResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }

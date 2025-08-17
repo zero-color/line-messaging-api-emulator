@@ -1,92 +1,109 @@
 package server
 
 import (
-	"net/http"
+	"context"
 
 	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
 )
 
-func (s *server) Broadcast(w http.ResponseWriter, r *http.Request, params messagingapi.BroadcastParams) {
+// Broadcast sends a message to all users
+func (s *server) Broadcast(ctx context.Context, request messagingapi.BroadcastRequestObject) (messagingapi.BroadcastResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) Multicast(w http.ResponseWriter, r *http.Request, params messagingapi.MulticastParams) {
+// Multicast sends a message to multiple users
+func (s *server) Multicast(ctx context.Context, request messagingapi.MulticastRequestObject) (messagingapi.MulticastResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) Narrowcast(w http.ResponseWriter, r *http.Request, params messagingapi.NarrowcastParams) {
+// Narrowcast sends a message to a narrowed audience
+func (s *server) Narrowcast(ctx context.Context, request messagingapi.NarrowcastRequestObject) (messagingapi.NarrowcastResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) GetNarrowcastProgress(w http.ResponseWriter, r *http.Request, params messagingapi.GetNarrowcastProgressParams) {
+// GetNarrowcastProgress gets the progress of a narrowcast message
+func (s *server) GetNarrowcastProgress(ctx context.Context, request messagingapi.GetNarrowcastProgressRequestObject) (messagingapi.GetNarrowcastProgressResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) PushMessage(w http.ResponseWriter, r *http.Request, params messagingapi.PushMessageParams) {
+// PushMessage sends a push message to a single user
+func (s *server) PushMessage(ctx context.Context, request messagingapi.PushMessageRequestObject) (messagingapi.PushMessageResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) PushMessagesByPhone(w http.ResponseWriter, r *http.Request, params messagingapi.PushMessagesByPhoneParams) {
+// PushMessagesByPhone sends push messages by phone number
+func (s *server) PushMessagesByPhone(ctx context.Context, request messagingapi.PushMessagesByPhoneRequestObject) (messagingapi.PushMessagesByPhoneResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) ReplyMessage(w http.ResponseWriter, r *http.Request) {
+// ReplyMessage sends a reply message
+func (s *server) ReplyMessage(ctx context.Context, request messagingapi.ReplyMessageRequestObject) (messagingapi.ReplyMessageResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) ValidateBroadcast(w http.ResponseWriter, r *http.Request) {
+// ValidateBroadcast validates a broadcast message
+func (s *server) ValidateBroadcast(ctx context.Context, request messagingapi.ValidateBroadcastRequestObject) (messagingapi.ValidateBroadcastResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) ValidateMulticast(w http.ResponseWriter, r *http.Request) {
+// ValidateMulticast validates a multicast message
+func (s *server) ValidateMulticast(ctx context.Context, request messagingapi.ValidateMulticastRequestObject) (messagingapi.ValidateMulticastResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) ValidateNarrowcast(w http.ResponseWriter, r *http.Request) {
+// ValidateNarrowcast validates a narrowcast message
+func (s *server) ValidateNarrowcast(ctx context.Context, request messagingapi.ValidateNarrowcastRequestObject) (messagingapi.ValidateNarrowcastResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) ValidatePush(w http.ResponseWriter, r *http.Request) {
+// ValidatePush validates a push message
+func (s *server) ValidatePush(ctx context.Context, request messagingapi.ValidatePushRequestObject) (messagingapi.ValidatePushResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) ValidateReply(w http.ResponseWriter, r *http.Request) {
+// ValidateReply validates a reply message
+func (s *server) ValidateReply(ctx context.Context, request messagingapi.ValidateReplyRequestObject) (messagingapi.ValidateReplyResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) GetMessageContent(w http.ResponseWriter, r *http.Request, messageId string) {
+// GetMessageContent gets the content of a message
+func (s *server) GetMessageContent(ctx context.Context, request messagingapi.GetMessageContentRequestObject) (messagingapi.GetMessageContentResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) GetMessageContentPreview(w http.ResponseWriter, r *http.Request, messageId string) {
+// GetMessageContentPreview gets the preview of message content
+func (s *server) GetMessageContentPreview(ctx context.Context, request messagingapi.GetMessageContentPreviewRequestObject) (messagingapi.GetMessageContentPreviewResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) GetMessageContentTranscodingByMessageId(w http.ResponseWriter, r *http.Request, messageId string) {
+// GetMessageContentTranscodingByMessageId gets transcoding status by message ID
+func (s *server) GetMessageContentTranscodingByMessageId(ctx context.Context, request messagingapi.GetMessageContentTranscodingByMessageIdRequestObject) (messagingapi.GetMessageContentTranscodingByMessageIdResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) MarkMessagesAsRead(w http.ResponseWriter, r *http.Request) {
+// MarkMessagesAsRead marks messages as read
+func (s *server) MarkMessagesAsRead(ctx context.Context, request messagingapi.MarkMessagesAsReadRequestObject) (messagingapi.MarkMessagesAsReadResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) ShowLoadingAnimation(w http.ResponseWriter, r *http.Request) {
+// ShowLoadingAnimation shows loading animation
+func (s *server) ShowLoadingAnimation(ctx context.Context, request messagingapi.ShowLoadingAnimationRequestObject) (messagingapi.ShowLoadingAnimationResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }

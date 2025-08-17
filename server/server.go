@@ -6,8 +6,8 @@ import (
 )
 
 type Server interface {
-	messagingapi.ServerInterface
-	adminapi.ServerInterface
+	messagingapi.StrictServerInterface
+	adminapi.StrictServerInterface
 }
 
 type server struct {

@@ -1,8 +1,13 @@
 package server
 
-import "net/http"
+import (
+	"context"
 
-func (s *server) GetBotInfo(w http.ResponseWriter, r *http.Request) {
+	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
+)
+
+// GetBotInfo gets information about the bot
+func (s *server) GetBotInfo(ctx context.Context, request messagingapi.GetBotInfoRequestObject) (messagingapi.GetBotInfoResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }

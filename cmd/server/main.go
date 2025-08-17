@@ -43,8 +43,13 @@ func realMain() error {
 
 	s := server.New()
 	r := chi.NewRouter()
-	messagingapi.HandlerFromMux(s, r)
-	adminapi.HandlerFromMux(s, r)
+	
+	// Use strict handlers with empty middleware for now
+	messagingHandler := messagingapi.NewStrictHandler(s, nil)
+	messagingapi.HandlerFromMux(messagingHandler, r)
+	
+	adminHandler := adminapi.NewStrictHandler(s, nil)
+	adminapi.HandlerFromMux(adminHandler, r)
 
 	logger.Info("Starting server", slog.Int("port", int(opts.Port)))
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", opts.Port), r); err != nil {

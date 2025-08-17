@@ -1,13 +1,19 @@
 package server
 
-import "net/http"
+import (
+	"context"
 
-func (s *server) GetMessageQuota(w http.ResponseWriter, r *http.Request) {
+	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
+)
+
+// GetMessageQuota gets the message quota
+func (s *server) GetMessageQuota(ctx context.Context, request messagingapi.GetMessageQuotaRequestObject) (messagingapi.GetMessageQuotaResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) GetMessageQuotaConsumption(w http.ResponseWriter, r *http.Request) {
+// GetMessageQuotaConsumption gets the message quota consumption
+func (s *server) GetMessageQuotaConsumption(ctx context.Context, request messagingapi.GetMessageQuotaConsumptionRequestObject) (messagingapi.GetMessageQuotaConsumptionResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }

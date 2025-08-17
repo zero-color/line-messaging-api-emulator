@@ -1,122 +1,145 @@
 package server
 
 import (
-	"net/http"
+	"context"
 
 	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
 )
 
-func (s *server) CreateRichMenu(w http.ResponseWriter, r *http.Request) {
+// CreateRichMenu creates a rich menu
+func (s *server) CreateRichMenu(ctx context.Context, request messagingapi.CreateRichMenuRequestObject) (messagingapi.CreateRichMenuResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) CreateRichMenuAlias(w http.ResponseWriter, r *http.Request) {
+// DeleteRichMenu deletes a rich menu
+func (s *server) DeleteRichMenu(ctx context.Context, request messagingapi.DeleteRichMenuRequestObject) (messagingapi.DeleteRichMenuResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) GetRichMenuAliasList(w http.ResponseWriter, r *http.Request) {
+// GetRichMenu gets a rich menu
+func (s *server) GetRichMenu(ctx context.Context, request messagingapi.GetRichMenuRequestObject) (messagingapi.GetRichMenuResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) DeleteRichMenuAlias(w http.ResponseWriter, r *http.Request, richMenuAliasId string) {
+// GetRichMenuList gets the list of rich menus
+func (s *server) GetRichMenuList(ctx context.Context, request messagingapi.GetRichMenuListRequestObject) (messagingapi.GetRichMenuListResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) GetRichMenuAlias(w http.ResponseWriter, r *http.Request, richMenuAliasId string) {
+// SetRichMenuImage sets the image for a rich menu
+func (s *server) SetRichMenuImage(ctx context.Context, request messagingapi.SetRichMenuImageRequestObject) (messagingapi.SetRichMenuImageResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) UpdateRichMenuAlias(w http.ResponseWriter, r *http.Request, richMenuAliasId string) {
+// GetRichMenuImage gets the image of a rich menu
+func (s *server) GetRichMenuImage(ctx context.Context, request messagingapi.GetRichMenuImageRequestObject) (messagingapi.GetRichMenuImageResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) RichMenuBatch(w http.ResponseWriter, r *http.Request) {
+// CreateRichMenuAlias creates a rich menu alias
+func (s *server) CreateRichMenuAlias(ctx context.Context, request messagingapi.CreateRichMenuAliasRequestObject) (messagingapi.CreateRichMenuAliasResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) LinkRichMenuIdToUsers(w http.ResponseWriter, r *http.Request) {
+// DeleteRichMenuAlias deletes a rich menu alias
+func (s *server) DeleteRichMenuAlias(ctx context.Context, request messagingapi.DeleteRichMenuAliasRequestObject) (messagingapi.DeleteRichMenuAliasResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) UnlinkRichMenuIdFromUsers(w http.ResponseWriter, r *http.Request) {
+// UpdateRichMenuAlias updates a rich menu alias
+func (s *server) UpdateRichMenuAlias(ctx context.Context, request messagingapi.UpdateRichMenuAliasRequestObject) (messagingapi.UpdateRichMenuAliasResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) GetRichMenuList(w http.ResponseWriter, r *http.Request) {
+// GetRichMenuAlias gets a rich menu alias
+func (s *server) GetRichMenuAlias(ctx context.Context, request messagingapi.GetRichMenuAliasRequestObject) (messagingapi.GetRichMenuAliasResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) GetRichMenuBatchProgress(w http.ResponseWriter, r *http.Request, params messagingapi.GetRichMenuBatchProgressParams) {
+// GetRichMenuAliasList gets the list of rich menu aliases
+func (s *server) GetRichMenuAliasList(ctx context.Context, request messagingapi.GetRichMenuAliasListRequestObject) (messagingapi.GetRichMenuAliasListResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) ValidateRichMenuObject(w http.ResponseWriter, r *http.Request) {
+// SetDefaultRichMenu sets the default rich menu
+func (s *server) SetDefaultRichMenu(ctx context.Context, request messagingapi.SetDefaultRichMenuRequestObject) (messagingapi.SetDefaultRichMenuResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) ValidateRichMenuBatchRequest(w http.ResponseWriter, r *http.Request) {
+// GetDefaultRichMenuId gets the default rich menu ID
+func (s *server) GetDefaultRichMenuId(ctx context.Context, request messagingapi.GetDefaultRichMenuIdRequestObject) (messagingapi.GetDefaultRichMenuIdResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) DeleteRichMenu(w http.ResponseWriter, r *http.Request, richMenuId string) {
+// CancelDefaultRichMenu cancels the default rich menu
+func (s *server) CancelDefaultRichMenu(ctx context.Context, request messagingapi.CancelDefaultRichMenuRequestObject) (messagingapi.CancelDefaultRichMenuResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) GetRichMenu(w http.ResponseWriter, r *http.Request, richMenuId string) {
+// LinkRichMenuIdToUser links a rich menu to a user
+func (s *server) LinkRichMenuIdToUser(ctx context.Context, request messagingapi.LinkRichMenuIdToUserRequestObject) (messagingapi.LinkRichMenuIdToUserResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) GetRichMenuImage(w http.ResponseWriter, r *http.Request, richMenuId string) {
+// LinkRichMenuIdToUsers links a rich menu to multiple users
+func (s *server) LinkRichMenuIdToUsers(ctx context.Context, request messagingapi.LinkRichMenuIdToUsersRequestObject) (messagingapi.LinkRichMenuIdToUsersResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) SetRichMenuImage(w http.ResponseWriter, r *http.Request, richMenuId string) {
+// UnlinkRichMenuIdFromUser unlinks a rich menu from a user
+func (s *server) UnlinkRichMenuIdFromUser(ctx context.Context, request messagingapi.UnlinkRichMenuIdFromUserRequestObject) (messagingapi.UnlinkRichMenuIdFromUserResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) SetDefaultRichMenu(w http.ResponseWriter, r *http.Request, richMenuId string) {
+// UnlinkRichMenuIdFromUsers unlinks a rich menu from multiple users
+func (s *server) UnlinkRichMenuIdFromUsers(ctx context.Context, request messagingapi.UnlinkRichMenuIdFromUsersRequestObject) (messagingapi.UnlinkRichMenuIdFromUsersResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) CancelDefaultRichMenu(w http.ResponseWriter, r *http.Request) {
+// GetRichMenuIdOfUser gets the rich menu ID of a user
+func (s *server) GetRichMenuIdOfUser(ctx context.Context, request messagingapi.GetRichMenuIdOfUserRequestObject) (messagingapi.GetRichMenuIdOfUserResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) GetDefaultRichMenuId(w http.ResponseWriter, r *http.Request) {
+// RichMenuBatch performs batch operations on rich menus
+func (s *server) RichMenuBatch(ctx context.Context, request messagingapi.RichMenuBatchRequestObject) (messagingapi.RichMenuBatchResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) UnlinkRichMenuIdFromUser(w http.ResponseWriter, r *http.Request, userId string) {
+// GetRichMenuBatchProgress gets the progress of a rich menu batch operation
+func (s *server) GetRichMenuBatchProgress(ctx context.Context, request messagingapi.GetRichMenuBatchProgressRequestObject) (messagingapi.GetRichMenuBatchProgressResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) GetRichMenuIdOfUser(w http.ResponseWriter, r *http.Request, userId string) {
+// ValidateRichMenuBatchRequest validates a rich menu batch request
+func (s *server) ValidateRichMenuBatchRequest(ctx context.Context, request messagingapi.ValidateRichMenuBatchRequestRequestObject) (messagingapi.ValidateRichMenuBatchRequestResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) LinkRichMenuIdToUser(w http.ResponseWriter, r *http.Request, userId string, richMenuId string) {
+// ValidateRichMenuObject validates a rich menu object
+func (s *server) ValidateRichMenuObject(ctx context.Context, request messagingapi.ValidateRichMenuObjectRequestObject) (messagingapi.ValidateRichMenuObjectResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }

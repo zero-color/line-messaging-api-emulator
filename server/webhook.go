@@ -1,18 +1,25 @@
 package server
 
-import "net/http"
+import (
+	"context"
 
-func (s *server) GetWebhookEndpoint(w http.ResponseWriter, r *http.Request) {
+	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
+)
+
+// GetWebhookEndpoint gets the webhook endpoint URL
+func (s *server) GetWebhookEndpoint(ctx context.Context, request messagingapi.GetWebhookEndpointRequestObject) (messagingapi.GetWebhookEndpointResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) SetWebhookEndpoint(w http.ResponseWriter, r *http.Request) {
+// SetWebhookEndpoint sets the webhook endpoint URL
+func (s *server) SetWebhookEndpoint(ctx context.Context, request messagingapi.SetWebhookEndpointRequestObject) (messagingapi.SetWebhookEndpointResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *server) TestWebhookEndpoint(w http.ResponseWriter, r *http.Request) {
+// TestWebhookEndpoint tests the webhook endpoint
+func (s *server) TestWebhookEndpoint(ctx context.Context, request messagingapi.TestWebhookEndpointRequestObject) (messagingapi.TestWebhookEndpointResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
