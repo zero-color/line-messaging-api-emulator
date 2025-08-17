@@ -2,6 +2,10 @@
 
 GO_TEST ?= go tool gotestsum --
 
+.PHONY: run
+run: ## Run the application
+	go run ./cmd/server
+
 .PHONY: test
 test: ## Run tests
 	$(GO_TEST) -race ./...
