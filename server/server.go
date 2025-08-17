@@ -1,14 +1,20 @@
 package server
 
 import (
+	"github.com/zero-color/line-messaging-api-emulator/api/adminapi"
 	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
 )
+
+type Server interface {
+	messagingapi.ServerInterface
+	adminapi.ServerInterface
+}
 
 type server struct {
 }
 
-var _ messagingapi.ServerInterface = (*server)(nil)
+var _ Server = (*server)(nil)
 
-func New() messagingapi.ServerInterface {
+func New() Server {
 	return &server{}
 }

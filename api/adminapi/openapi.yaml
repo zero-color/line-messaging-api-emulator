@@ -1,0 +1,154 @@
+openapi: 3.0.0
+info:
+  title: LINE Messaging API Emulator Admin API
+  description: Admin API for managing LINE Messaging API Emulator
+  version: 1.0.0
+servers:
+  - url: http://localhost:9080
+    description: Local development server
+paths:
+  /admin/bots:
+    post:
+      summary: Create a new bot
+      description: Creates a new bot (LINE Official Account) in the emulator
+      operationId: createBot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBotRequest'
+      responses:
+        '201':
+          description: Bot created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BotInfoResponse'
+        '400':
+          description: Bad request - invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict - bot already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    CreateBotRequest:
+      type: object
+      required:
+        - basicId
+        - chatMode
+        - displayName
+        - markAsReadMode
+        - userId
+      properties:
+        basicId:
+          type: string
+          description: Bot's basic ID
+          example: "@example"
+        chatMode:
+          type: string
+          description: |
+            Chat settings set in the LINE Official Account Manager.
+            - `chat`: Chat is set to "On"
+            - `bot`: Chat is set to "Off"
+          enum:
+            - chat
+            - bot
+        displayName:
+          type: string
+          description: Bot's display name
+          example: "Example Bot"
+        markAsReadMode:
+          type: string
+          description: |
+            Automatic read setting for messages.
+            - `auto`: Auto read setting is enabled
+            - `manual`: Auto read setting is disabled
+          enum:
+            - auto
+            - manual
+        pictureUrl:
+          type: string
+          format: uri
+          description: Profile image URL. Must be an HTTPS URL.
+          example: "https://example.com/profile.jpg"
+        premiumId:
+          type: string
+          description: Bot's premium ID
+          example: "premium123"
+        userId:
+          type: string
+          description: Bot's user ID
+          example: "U1234567890abcdef"
+    BotInfoResponse:
+      type: object
+      required:
+        - basicId
+        - chatMode
+        - displayName
+        - markAsReadMode
+        - userId
+      properties:
+        basicId:
+          type: string
+          description: Bot's basic ID
+        chatMode:
+          type: string
+          description: |
+            Chat settings set in the LINE Official Account Manager.
+            - `chat`: Chat is set to "On"
+            - `bot`: Chat is set to "Off"
+          enum:
+            - chat
+            - bot
+        displayName:
+          type: string
+          description: Bot's display name
+        markAsReadMode:
+          type: string
+          description: |
+            Automatic read setting for messages.
+            - `auto`: Auto read setting is enabled
+            - `manual`: Auto read setting is disabled
+          enum:
+            - auto
+            - manual
+        pictureUrl:
+          type: string
+          format: uri
+          description: Profile image URL. HTTPS image URL. Not included if the bot doesn't have a profile image.
+        premiumId:
+          type: string
+          description: Bot's premium ID. Not included if the premium ID isn't set.
+        userId:
+          type: string
+          description: Bot's user ID
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - message
+          properties:
+            message:
+              type: string
+              description: Error message
+            code:
+              type: string
+              description: Error code

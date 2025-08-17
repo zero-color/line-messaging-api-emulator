@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jessevdk/go-flags"
+	"github.com/zero-color/line-messaging-api-emulator/api/adminapi"
 	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
 	"github.com/zero-color/line-messaging-api-emulator/server"
 )
@@ -42,14 +43,11 @@ func realMain() error {
 
 	s := server.New()
 	r := chi.NewRouter()
-
-	httpServer := &http.Server{
-		Handler: messagingapi.HandlerFromMux(s, r),
-		Addr:    fmt.Sprintf("0.0.0.0:%d", opts.Port),
-	}
+	messagingapi.HandlerFromMux(s, r)
+	adminapi.HandlerFromMux(s, r)
 
 	logger.Info("Starting server", slog.Int("port", int(opts.Port)))
-	if err := httpServer.ListenAndServe(); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", opts.Port), r); err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
 	return nil

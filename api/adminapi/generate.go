@@ -1,3 +1,3 @@
-package messagingapi
+package adminapi
 
-//go:generate go tool oapi-codegen -config api.yaml ../../line-openapi/messaging-api.yml
+//go:generate go tool oapi-codegen -config api.yaml ./openapi.yaml

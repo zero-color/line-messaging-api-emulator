@@ -2,7 +2,7 @@ package server
 
 import "net/http"
 
-func (s *server) GetBotInfo(w http.ResponseWriter, r *http.Request) {
+func (s *server) CreateBot(w http.ResponseWriter, r *http.Request) {
 	//TODO implement me
 	panic("implement me")
 }
