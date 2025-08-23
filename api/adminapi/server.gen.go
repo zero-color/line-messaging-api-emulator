@@ -78,12 +78,12 @@ type BotInfoResponseMarkAsReadMode string
 // CreateBotRequest defines model for CreateBotRequest.
 type CreateBotRequest struct {
 	// BasicId Bot's basic ID
-	BasicId string `json:"basicId"`
+	BasicId *string `json:"basicId,omitempty"`
 
 	// ChatMode Chat settings set in the LINE Official Account Manager.
 	// - `chat`: Chat is set to "On"
 	// - `bot`: Chat is set to "Off"
-	ChatMode CreateBotRequestChatMode `json:"chatMode"`
+	ChatMode *CreateBotRequestChatMode `json:"chatMode,omitempty"`
 
 	// DisplayName Bot's display name
 	DisplayName string `json:"displayName"`
@@ -91,7 +91,7 @@ type CreateBotRequest struct {
 	// MarkAsReadMode Automatic read setting for messages.
 	// - `auto`: Auto read setting is enabled
 	// - `manual`: Auto read setting is disabled
-	MarkAsReadMode CreateBotRequestMarkAsReadMode `json:"markAsReadMode"`
+	MarkAsReadMode *CreateBotRequestMarkAsReadMode `json:"markAsReadMode,omitempty"`
 
 	// PictureUrl Profile image URL. Must be an HTTPS URL.
 	PictureUrl *string `json:"pictureUrl,omitempty"`
@@ -100,7 +100,7 @@ type CreateBotRequest struct {
 	PremiumId *string `json:"premiumId,omitempty"`
 
 	// UserId Bot's user ID
-	UserId string `json:"userId"`
+	UserId *string `json:"userId,omitempty"`
 }
 
 // CreateBotRequestChatMode Chat settings set in the LINE Official Account Manager.

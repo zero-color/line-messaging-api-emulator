@@ -11,11 +11,13 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/zero-color/line-messaging-api-emulator/api/adminapi"
 	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
+	"github.com/zero-color/line-messaging-api-emulator/db"
 	"github.com/zero-color/line-messaging-api-emulator/server"
 )
 
 type options struct {
-	Port uint16 `description:"http port number" long:"port" default:"9090"`
+	Port        uint16 `description:"http port number" long:"port" default:"9090"`
+	DatabaseURL string `description:"PostgreSQL connection string" long:"database-url" env:"DATABASE_URL" default:"postgres://postgres:password@localhost:5432/line_emulator?sslmode=disable"`
 }
 
 func main() {
@@ -41,13 +43,20 @@ func realMain() error {
 
 	logger := slog.Default()
 
-	s := server.New()
+	sqlDB, err := db.ConnectDB(opts.DatabaseURL)
+	if err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+	defer sqlDB.Close()
+
+	dbClient := db.New(sqlDB)
+	s := server.New(dbClient)
 	r := chi.NewRouter()
-	
+
 	// Use strict handlers with empty middleware for now
 	messagingHandler := messagingapi.NewStrictHandler(s, nil)
 	messagingapi.HandlerFromMux(messagingHandler, r)
-	
+
 	adminHandler := adminapi.NewStrictHandler(s, nil)
 	adminapi.HandlerFromMux(adminHandler, r)
 

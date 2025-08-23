@@ -18,6 +18,10 @@ lint: ## Run linters
 generate: ## Run go generate
 	go generate ./...
 
+.PHONY: db-migrate
+db-migrate: ## Run database migrations
+	cd db && atlas schema apply --env local && sqlc generate
+
 .PHONY: help
 help: ## Display this help screen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

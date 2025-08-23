@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/zero-color/line-messaging-api-emulator/api/adminapi"
 	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
+	"github.com/zero-color/line-messaging-api-emulator/db"
 )
 
 type Server interface {
@@ -11,10 +12,11 @@ type Server interface {
 }
 
 type server struct {
+	db db.Querier
 }
 
-var _ Server = (*server)(nil)
-
-func New() Server {
-	return &server{}
+func New(db db.Querier) Server {
+	return &server{
+		db: db,
+	}
 }

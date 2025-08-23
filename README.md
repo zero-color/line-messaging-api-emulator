@@ -14,6 +14,7 @@ A lightweight, local emulator for the LINE Messaging API that allows developers 
 
 - Go 1.24.4 or higher
 - Make (optional, for using Makefile commands)
+- Atlas CLI (`curl -sSf https://atlasgo.sh | sh -s --`)
 
 ## Installation
 

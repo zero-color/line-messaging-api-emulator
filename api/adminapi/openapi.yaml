@@ -48,11 +48,7 @@ components:
     CreateBotRequest:
       type: object
       required:
-        - basicId
-        - chatMode
         - displayName
-        - markAsReadMode
-        - userId
       properties:
         basicId:
           type: string
