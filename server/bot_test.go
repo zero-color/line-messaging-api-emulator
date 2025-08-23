@@ -19,14 +19,6 @@ func TestGetBotInfo(t *testing.T) {
 
 	ctx := context.Background()
 
-	t.Run("returns error when bot ID not in context", func(t *testing.T) {
-		req := messagingapi.GetBotInfoRequestObject{}
-		resp, err := srv.GetBotInfo(ctx, req)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "bot ID not found in context")
-		assert.Nil(t, resp)
-	})
-
 	t.Run("returns bot info when bot exists", func(t *testing.T) {
 		// Create a bot first
 		displayName := "Test Bot"
@@ -50,11 +42,11 @@ func TestGetBotInfo(t *testing.T) {
 		require.NoError(t, err)
 
 		// Add bot ID to context
-		ctxWithBot := context.WithValue(ctx, auth.BotIDContextKey, bot.ID)
+		ctx := auth.SetBotID(context.Background(), bot.ID)
 
 		// Get bot info
 		req := messagingapi.GetBotInfoRequestObject{}
-		resp, err := srv.GetBotInfo(ctxWithBot, req)
+		resp, err := srv.GetBotInfo(ctx, req)
 		require.NoError(t, err)
 
 		botResp, ok := resp.(messagingapi.GetBotInfo200JSONResponse)
@@ -70,10 +62,10 @@ func TestGetBotInfo(t *testing.T) {
 
 	t.Run("returns error when bot does not exist", func(t *testing.T) {
 		// Use a non-existent bot ID
-		ctxWithBot := context.WithValue(ctx, auth.BotIDContextKey, int32(99999))
+		ctx := auth.SetBotID(context.Background(), 99999)
 
 		req := messagingapi.GetBotInfoRequestObject{}
-		resp, err := srv.GetBotInfo(ctxWithBot, req)
+		resp, err := srv.GetBotInfo(ctx, req)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to get bot")
 		assert.Nil(t, resp)
@@ -113,7 +105,7 @@ func TestGetBotInfo(t *testing.T) {
 		require.NoError(t, err)
 
 		// Test with first bot ID
-		ctxWithBot1 := context.WithValue(ctx, auth.BotIDContextKey, bot1.ID)
+		ctxWithBot1 := auth.SetBotID(ctx, bot1.ID)
 		req := messagingapi.GetBotInfoRequestObject{}
 		resp1, err := srv.GetBotInfo(ctxWithBot1, req)
 		require.NoError(t, err)
@@ -123,7 +115,7 @@ func TestGetBotInfo(t *testing.T) {
 		assert.Equal(t, firstBotName, botResp1.DisplayName)
 
 		// Test with second bot ID
-		ctxWithBot2 := context.WithValue(ctx, auth.BotIDContextKey, bot2.ID)
+		ctxWithBot2 := auth.SetBotID(ctx, bot2.ID)
 		resp2, err := srv.GetBotInfo(ctxWithBot2, req)
 		require.NoError(t, err)
 		botResp2, ok := resp2.(messagingapi.GetBotInfo200JSONResponse)

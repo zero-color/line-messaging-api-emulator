@@ -10,9 +10,8 @@ import (
 	"github.com/zero-color/line-messaging-api-emulator/db"
 )
 
-type contextKey string
-
-const BotIDContextKey contextKey = "bot_id"
+type botIdContextKey struct {
+}
 
 func Middleware(queries *db.Queries) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -41,12 +40,18 @@ func Middleware(queries *db.Queries) func(http.Handler) http.Handler {
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), BotIDContextKey, bot.ID)
+			ctx := SetBotID(r.Context(), bot.ID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
+// SetBotID sets the bot ID in the context
+// It shouldn't be used outside of this package except for testing
+func SetBotID(ctx context.Context, botID int32) context.Context {
+	return context.WithValue(ctx, botIdContextKey{}, botID)
+}
+
 func GetBotID(ctx context.Context) int32 {
-	return ctx.Value(BotIDContextKey).(int32)
+	return ctx.Value(botIdContextKey{}).(int32)
 }
