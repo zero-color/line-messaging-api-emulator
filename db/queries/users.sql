@@ -21,7 +21,13 @@ INSERT INTO users (
 );
 
 -- name: GetUser :one
-SELECT * FROM users WHERE user_id = $1;
+SELECT * FROM users
+WHERE user_id = $1;
+
+-- name: GetBotFollowerUser :one
+SELECT u.* FROM users u
+INNER JOIN bot_followers bf ON u.id = bf.user_id
+WHERE bf.bot_id = $1 AND u.user_id = $2;
 
 -- name: GetUserByID :one
 SELECT * FROM users WHERE id = $1;

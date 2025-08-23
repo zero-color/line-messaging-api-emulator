@@ -103,6 +103,33 @@ func (q *Queries) GetBotFollowerCount(ctx context.Context, botID int32) (int64, 
 	return count, err
 }
 
+const getBotFollowerUser = `-- name: GetBotFollowerUser :one
+SELECT u.id, u.user_id, u.display_name, u.picture_url, u.status_message, u.language, u.created_at, u.updated_at FROM users u
+INNER JOIN bot_followers bf ON u.id = bf.user_id
+WHERE bf.bot_id = $1 AND u.user_id = $2
+`
+
+type GetBotFollowerUserParams struct {
+	BotID  int32  `db:"bot_id" json:"bot_id"`
+	UserID string `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) GetBotFollowerUser(ctx context.Context, arg GetBotFollowerUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, getBotFollowerUser, arg.BotID, arg.UserID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.DisplayName,
+		&i.PictureUrl,
+		&i.StatusMessage,
+		&i.Language,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getBotFollowerUserIDs = `-- name: GetBotFollowerUserIDs :many
 SELECT u.user_id FROM users u
 INNER JOIN bot_followers bf ON u.id = bf.user_id
@@ -181,7 +208,8 @@ func (q *Queries) GetBotFollowers(ctx context.Context, arg GetBotFollowersParams
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, user_id, display_name, picture_url, status_message, language, created_at, updated_at FROM users WHERE user_id = $1
+SELECT id, user_id, display_name, picture_url, status_message, language, created_at, updated_at FROM users
+WHERE user_id = $1
 `
 
 func (q *Queries) GetUser(ctx context.Context, userID string) (User, error) {

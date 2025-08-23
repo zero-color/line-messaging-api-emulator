@@ -19,6 +19,7 @@ type Querier interface {
 	GetBotByBasicID(ctx context.Context, basicID string) (Bot, error)
 	GetBotByUserID(ctx context.Context, userID string) (Bot, error)
 	GetBotFollowerCount(ctx context.Context, botID int32) (int64, error)
+	GetBotFollowerUser(ctx context.Context, arg GetBotFollowerUserParams) (User, error)
 	GetBotFollowerUserIDs(ctx context.Context, arg GetBotFollowerUserIDsParams) ([]string, error)
 	GetBotFollowers(ctx context.Context, arg GetBotFollowersParams) ([]User, error)
 	GetUser(ctx context.Context, userID string) (User, error)
