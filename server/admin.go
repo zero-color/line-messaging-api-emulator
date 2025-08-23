@@ -9,7 +9,6 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/samber/lo"
 	"github.com/zero-color/line-messaging-api-emulator/api/adminapi"
 	"github.com/zero-color/line-messaging-api-emulator/db"
@@ -43,14 +42,14 @@ func (s *server) CreateBot(ctx context.Context, request adminapi.CreateBotReques
 		markAsReadMode = string(*request.Body.MarkAsReadMode)
 	}
 
-	var pictureURL pgtype.Text
+	var pictureURL *string
 	if request.Body.PictureUrl != nil {
-		pictureURL = pgtype.Text{String: *request.Body.PictureUrl, Valid: true}
+		pictureURL = request.Body.PictureUrl
 	}
 
-	var premiumID pgtype.Text
+	var premiumID *string
 	if request.Body.PremiumId != nil {
-		premiumID = pgtype.Text{String: *request.Body.PremiumId, Valid: true}
+		premiumID = request.Body.PremiumId
 	}
 
 	bot, err := s.db.CreateBot(ctx, db.CreateBotParams{
@@ -91,19 +90,12 @@ func (s *server) CreateBot(ctx context.Context, request adminapi.CreateBotReques
 		ChatMode:       adminapi.BotInfoResponseChatMode(bot.ChatMode),
 		DisplayName:    bot.DisplayName,
 		MarkAsReadMode: adminapi.BotInfoResponseMarkAsReadMode(bot.MarkAsReadMode),
-		PictureUrl:     pgTextToPtr(bot.PictureUrl),
-		PremiumId:      pgTextToPtr(bot.PremiumID),
+		PictureUrl:     bot.PictureUrl,
+		PremiumId:      bot.PremiumID,
 		UserId:         bot.UserID,
 	}
 
 	return adminapi.CreateBot201JSONResponse(response), nil
-}
-
-func pgTextToPtr(t pgtype.Text) *string {
-	if t.Valid {
-		return &t.String
-	}
-	return nil
 }
 
 // CreateFollowers creates dummy followers for a bot using bulk insert
@@ -248,18 +240,16 @@ func generateDisplayName(fake *gofakeit.Faker) string {
 }
 
 // generatePictureURL creates an optional picture URL (70% chance)
-func generatePictureURL(fake *gofakeit.Faker, userID string) pgtype.Text {
+func generatePictureURL(fake *gofakeit.Faker, userID string) *string {
 	if fake.Bool() || fake.Number(1, 10) > 3 {
-		return pgtype.Text{
-			String: fmt.Sprintf("https://picsum.photos/200?random=%s", userID),
-			Valid:  true,
-		}
+		url := fmt.Sprintf("https://picsum.photos/200?random=%s", userID)
+		return &url
 	}
-	return pgtype.Text{Valid: false}
+	return nil
 }
 
 // generateStatusMessage creates an optional status message (60% chance)
-func generateStatusMessage(fake *gofakeit.Faker) pgtype.Text {
+func generateStatusMessage(fake *gofakeit.Faker) *string {
 	statusMessages := []string{
 		"Hello, LINE!",
 		"Nice to meet you!",
@@ -275,31 +265,26 @@ func generateStatusMessage(fake *gofakeit.Faker) pgtype.Text {
 	}
 
 	if fake.Number(1, 10) <= 6 {
+		var status string
 		if fake.Bool() {
-			return pgtype.Text{
-				String: fake.RandomString(statusMessages),
-				Valid:  true,
-			}
+			status = fake.RandomString(statusMessages)
+		} else {
+			status = fake.Sentence(fake.Number(2, 5))
 		}
-		return pgtype.Text{
-			String: fake.Sentence(fake.Number(2, 5)),
-			Valid:  true,
-		}
+		return &status
 	}
-	return pgtype.Text{Valid: false}
+	return nil
 }
 
 // generateLanguage creates an optional language code (80% chance)
-func generateLanguage(fake *gofakeit.Faker) pgtype.Text {
+func generateLanguage(fake *gofakeit.Faker) *string {
 	languages := []string{"ja", "en", "zh", "ko", "th", "id", "es", "pt", "fr", "de"}
 
 	if fake.Number(1, 10) <= 8 {
-		return pgtype.Text{
-			String: fake.RandomString(languages),
-			Valid:  true,
-		}
+		lang := fake.RandomString(languages)
+		return &lang
 	}
-	return pgtype.Text{Valid: false}
+	return nil
 }
 
 // bulkInsertUsers performs bulk insert of users with fallback to individual inserts
@@ -344,20 +329,11 @@ func (s *server) buildFollowerProfiles(users []db.User) []adminapi.FollowerProfi
 
 	for _, user := range users {
 		followerProfile := adminapi.FollowerProfile{
-			UserId:      user.UserID,
-			DisplayName: user.DisplayName,
-		}
-
-		if user.PictureUrl.Valid {
-			followerProfile.PictureUrl = &user.PictureUrl.String
-		}
-
-		if user.StatusMessage.Valid {
-			followerProfile.StatusMessage = &user.StatusMessage.String
-		}
-
-		if user.Language.Valid {
-			followerProfile.Language = &user.Language.String
+			UserId:        user.UserID,
+			DisplayName:   user.DisplayName,
+			PictureUrl:    user.PictureUrl,
+			StatusMessage: user.StatusMessage,
+			Language:      user.Language,
 		}
 
 		followers = append(followers, followerProfile)

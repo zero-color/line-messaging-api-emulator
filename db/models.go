@@ -15,8 +15,8 @@ type Bot struct {
 	ChatMode       string             `db:"chat_mode" json:"chat_mode"`
 	DisplayName    string             `db:"display_name" json:"display_name"`
 	MarkAsReadMode string             `db:"mark_as_read_mode" json:"mark_as_read_mode"`
-	PictureUrl     pgtype.Text        `db:"picture_url" json:"picture_url"`
-	PremiumID      pgtype.Text        `db:"premium_id" json:"premium_id"`
+	PictureUrl     *string            `db:"picture_url" json:"picture_url"`
+	PremiumID      *string            `db:"premium_id" json:"premium_id"`
 	CreatedAt      pgtype.Timestamptz `db:"created_at" json:"created_at"`
 	UpdatedAt      pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }
@@ -32,9 +32,9 @@ type User struct {
 	ID            int32              `db:"id" json:"id"`
 	UserID        string             `db:"user_id" json:"user_id"`
 	DisplayName   string             `db:"display_name" json:"display_name"`
-	PictureUrl    pgtype.Text        `db:"picture_url" json:"picture_url"`
-	StatusMessage pgtype.Text        `db:"status_message" json:"status_message"`
-	Language      pgtype.Text        `db:"language" json:"language"`
+	PictureUrl    *string            `db:"picture_url" json:"picture_url"`
+	StatusMessage *string            `db:"status_message" json:"status_message"`
+	Language      *string            `db:"language" json:"language"`
 	CreatedAt     pgtype.Timestamptz `db:"created_at" json:"created_at"`
 	UpdatedAt     pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }

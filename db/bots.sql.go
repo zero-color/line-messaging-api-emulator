@@ -7,8 +7,6 @@ package db
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createBot = `-- name: CreateBot :one
@@ -32,13 +30,13 @@ INSERT INTO bots (
 `
 
 type CreateBotParams struct {
-	UserID         string      `db:"user_id" json:"user_id"`
-	BasicID        string      `db:"basic_id" json:"basic_id"`
-	ChatMode       string      `db:"chat_mode" json:"chat_mode"`
-	DisplayName    string      `db:"display_name" json:"display_name"`
-	MarkAsReadMode string      `db:"mark_as_read_mode" json:"mark_as_read_mode"`
-	PictureUrl     pgtype.Text `db:"picture_url" json:"picture_url"`
-	PremiumID      pgtype.Text `db:"premium_id" json:"premium_id"`
+	UserID         string  `db:"user_id" json:"user_id"`
+	BasicID        string  `db:"basic_id" json:"basic_id"`
+	ChatMode       string  `db:"chat_mode" json:"chat_mode"`
+	DisplayName    string  `db:"display_name" json:"display_name"`
+	MarkAsReadMode string  `db:"mark_as_read_mode" json:"mark_as_read_mode"`
+	PictureUrl     *string `db:"picture_url" json:"picture_url"`
+	PremiumID      *string `db:"premium_id" json:"premium_id"`
 }
 
 func (q *Queries) CreateBot(ctx context.Context, arg CreateBotParams) (Bot, error) {
@@ -197,13 +195,13 @@ RETURNING id, user_id, basic_id, chat_mode, display_name, mark_as_read_mode, pic
 `
 
 type UpdateBotParams struct {
-	BasicID        string      `db:"basic_id" json:"basic_id"`
-	ChatMode       string      `db:"chat_mode" json:"chat_mode"`
-	DisplayName    string      `db:"display_name" json:"display_name"`
-	MarkAsReadMode string      `db:"mark_as_read_mode" json:"mark_as_read_mode"`
-	PictureUrl     pgtype.Text `db:"picture_url" json:"picture_url"`
-	PremiumID      pgtype.Text `db:"premium_id" json:"premium_id"`
-	UserID         string      `db:"user_id" json:"user_id"`
+	BasicID        string  `db:"basic_id" json:"basic_id"`
+	ChatMode       string  `db:"chat_mode" json:"chat_mode"`
+	DisplayName    string  `db:"display_name" json:"display_name"`
+	MarkAsReadMode string  `db:"mark_as_read_mode" json:"mark_as_read_mode"`
+	PictureUrl     *string `db:"picture_url" json:"picture_url"`
+	PremiumID      *string `db:"premium_id" json:"premium_id"`
+	UserID         string  `db:"user_id" json:"user_id"`
 }
 
 func (q *Queries) UpdateBot(ctx context.Context, arg UpdateBotParams) (Bot, error) {

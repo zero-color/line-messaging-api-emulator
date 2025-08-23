@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
@@ -28,12 +27,15 @@ func TestGetProfile(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create a user
+	pictureUrl := "https://example.com/picture.jpg"
+	statusMessage := "I love LINE!"
+	language := "en"
 	user, err := dbClient.CreateUser(context.Background(), db.CreateUserParams{
 		UserID:        "test-user-id",
 		DisplayName:   "Test User",
-		PictureUrl:    pgtype.Text{String: "https://example.com/picture.jpg", Valid: true},
-		StatusMessage: pgtype.Text{String: "I love LINE!", Valid: true},
-		Language:      pgtype.Text{String: "en", Valid: true},
+		PictureUrl:    &pictureUrl,
+		StatusMessage: &statusMessage,
+		Language:      &language,
 	})
 	require.NoError(t, err)
 

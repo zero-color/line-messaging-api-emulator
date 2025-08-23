@@ -21,14 +21,8 @@ func (s *server) GetBotInfo(ctx context.Context, _ messagingapi.GetBotInfoReques
 		DisplayName:    bot.DisplayName,
 		ChatMode:       messagingapi.BotInfoResponseChatMode(bot.ChatMode),
 		MarkAsReadMode: messagingapi.BotInfoResponseMarkAsReadMode(bot.MarkAsReadMode),
-	}
-
-	if bot.PictureUrl.Valid {
-		response.PictureUrl = &bot.PictureUrl.String
-	}
-
-	if bot.PremiumID.Valid {
-		response.PremiumId = &bot.PremiumID.String
+		PictureUrl:     bot.PictureUrl,
+		PremiumId:      bot.PremiumID,
 	}
 
 	return response, nil

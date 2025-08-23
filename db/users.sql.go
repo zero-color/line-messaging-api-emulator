@@ -7,8 +7,6 @@ package db
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createBotFollower = `-- name: CreateBotFollower :one
@@ -55,11 +53,11 @@ INSERT INTO users (
 `
 
 type CreateUserParams struct {
-	UserID        string      `db:"user_id" json:"user_id"`
-	DisplayName   string      `db:"display_name" json:"display_name"`
-	PictureUrl    pgtype.Text `db:"picture_url" json:"picture_url"`
-	StatusMessage pgtype.Text `db:"status_message" json:"status_message"`
-	Language      pgtype.Text `db:"language" json:"language"`
+	UserID        string  `db:"user_id" json:"user_id"`
+	DisplayName   string  `db:"display_name" json:"display_name"`
+	PictureUrl    *string `db:"picture_url" json:"picture_url"`
+	StatusMessage *string `db:"status_message" json:"status_message"`
+	Language      *string `db:"language" json:"language"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -85,11 +83,11 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 }
 
 type CreateUsersParams struct {
-	UserID        string      `db:"user_id" json:"user_id"`
-	DisplayName   string      `db:"display_name" json:"display_name"`
-	PictureUrl    pgtype.Text `db:"picture_url" json:"picture_url"`
-	StatusMessage pgtype.Text `db:"status_message" json:"status_message"`
-	Language      pgtype.Text `db:"language" json:"language"`
+	UserID        string  `db:"user_id" json:"user_id"`
+	DisplayName   string  `db:"display_name" json:"display_name"`
+	PictureUrl    *string `db:"picture_url" json:"picture_url"`
+	StatusMessage *string `db:"status_message" json:"status_message"`
+	Language      *string `db:"language" json:"language"`
 }
 
 const getBotFollowerCount = `-- name: GetBotFollowerCount :one

@@ -27,20 +27,11 @@ func (s *server) GetProfile(ctx context.Context, request messagingapi.GetProfile
 	}
 
 	response := messagingapi.GetProfile200JSONResponse{
-		UserId:      user.UserID,
-		DisplayName: user.DisplayName,
-	}
-
-	if user.PictureUrl.Valid {
-		response.PictureUrl = &user.PictureUrl.String
-	}
-
-	if user.StatusMessage.Valid {
-		response.StatusMessage = &user.StatusMessage.String
-	}
-
-	if user.Language.Valid {
-		response.Language = &user.Language.String
+		UserId:        user.UserID,
+		DisplayName:   user.DisplayName,
+		PictureUrl:    user.PictureUrl,
+		StatusMessage: user.StatusMessage,
+		Language:      user.Language,
 	}
 
 	return response, nil
