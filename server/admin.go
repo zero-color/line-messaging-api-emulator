@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/samber/lo"
@@ -19,14 +20,14 @@ func (s *server) CreateBot(ctx context.Context, request adminapi.CreateBotReques
 	if request.Body.UserId != nil && *request.Body.UserId != "" {
 		userID = *request.Body.UserId
 	} else {
-		userID = "U" + uuid.New().String()
+		userID = "U" + strings.ReplaceAll(uuid.New().String(), "-", "")
 	}
 
-	var basicID sql.NullString
+	var basicID string
 	if request.Body.BasicId != nil {
-		basicID = sql.NullString{String: *request.Body.BasicId, Valid: true}
+		basicID = *request.Body.BasicId
 	} else {
-		basicID = sql.NullString{String: "@" + shortid.New(), Valid: true}
+		basicID = "@" + shortid.New()
 	}
 
 	chatMode := "bot"
@@ -83,7 +84,7 @@ func (s *server) CreateBot(ctx context.Context, request adminapi.CreateBotReques
 	}
 
 	response := adminapi.BotInfoResponse{
-		BasicId:        bot.BasicID.String,
+		BasicId:        bot.BasicID,
 		ChatMode:       adminapi.BotInfoResponseChatMode(bot.ChatMode),
 		DisplayName:    bot.DisplayName,
 		MarkAsReadMode: adminapi.BotInfoResponseMarkAsReadMode(bot.MarkAsReadMode),

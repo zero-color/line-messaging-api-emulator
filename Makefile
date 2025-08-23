@@ -4,6 +4,7 @@ GO_TEST ?= go tool gotestsum --
 
 .PHONY: run
 run: ## Run the application
+	docker compose up -d
 	go run ./cmd/server
 
 .PHONY: test

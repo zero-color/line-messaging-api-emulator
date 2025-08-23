@@ -8,18 +8,26 @@ INSERT INTO bots (
     picture_url,
     premium_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
+          @user_id,
+            @basic_id,
+            @chat_mode,
+            @display_name,
+          @mark_as_read_mode,
+            @picture_url,
+            @premium_id
 ) RETURNING *;
 
 -- name: GetBot :one
 SELECT * FROM bots
-WHERE user_id = $1
-LIMIT 1;
+WHERE id = @id;
+
+-- name: GetBotByUserID :one
+SELECT * FROM bots
+WHERE user_id = @user_id;
 
 -- name: GetBotByBasicID :one
 SELECT * FROM bots
-WHERE basic_id = $1
-LIMIT 1;
+WHERE basic_id = @basic_id;
 
 -- name: ListBots :many
 SELECT * FROM bots
@@ -28,16 +36,16 @@ ORDER BY created_at DESC;
 -- name: UpdateBot :one
 UPDATE bots
 SET
-    basic_id = $2,
-    chat_mode = $3,
-    display_name = $4,
-    mark_as_read_mode = $5,
-    picture_url = $6,
-    premium_id = $7,
+    basic_id = @basic_id,
+    chat_mode = @chat_mode,
+    display_name = @display_name,
+    mark_as_read_mode = @mark_as_read_mode,
+    picture_url = @picture_url,
+    premium_id = @premium_id,
     updated_at = CURRENT_TIMESTAMP
-WHERE user_id = $1
+WHERE user_id = @user_id
 RETURNING *;
 
 -- name: DeleteBot :exec
 DELETE FROM bots
-WHERE user_id = $1;
+WHERE user_id = @user_id;

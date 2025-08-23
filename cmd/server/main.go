@@ -12,6 +12,7 @@ import (
 	"github.com/zero-color/line-messaging-api-emulator/api/adminapi"
 	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
 	"github.com/zero-color/line-messaging-api-emulator/db"
+	"github.com/zero-color/line-messaging-api-emulator/internal/auth"
 	"github.com/zero-color/line-messaging-api-emulator/server"
 )
 
@@ -53,12 +54,16 @@ func realMain() error {
 	s := server.New(dbClient)
 	r := chi.NewRouter()
 
-	// Use strict handlers with empty middleware for now
-	messagingHandler := messagingapi.NewStrictHandler(s, nil)
-	messagingapi.HandlerFromMux(messagingHandler, r)
-
+	// Admin API routes (no auth required)
 	adminHandler := adminapi.NewStrictHandler(s, nil)
 	adminapi.HandlerFromMux(adminHandler, r)
+
+	// Messaging API routes with auth middleware
+	r.Group(func(r chi.Router) {
+		r.Use(auth.Middleware(dbClient))
+		messagingHandler := messagingapi.NewStrictHandler(s, nil)
+		messagingapi.HandlerFromMux(messagingHandler, r)
+	})
 
 	logger.Info("Starting server", slog.Int("port", int(opts.Port)))
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", opts.Port), r); err != nil {

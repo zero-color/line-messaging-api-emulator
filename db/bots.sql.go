@@ -20,13 +20,19 @@ INSERT INTO bots (
     picture_url,
     premium_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
+          $1,
+            $2,
+            $3,
+            $4,
+          $5,
+            $6,
+            $7
 ) RETURNING id, user_id, basic_id, chat_mode, display_name, mark_as_read_mode, picture_url, premium_id, created_at, updated_at
 `
 
 type CreateBotParams struct {
 	UserID         string         `db:"user_id" json:"user_id"`
-	BasicID        sql.NullString `db:"basic_id" json:"basic_id"`
+	BasicID        string         `db:"basic_id" json:"basic_id"`
 	ChatMode       string         `db:"chat_mode" json:"chat_mode"`
 	DisplayName    string         `db:"display_name" json:"display_name"`
 	MarkAsReadMode string         `db:"mark_as_read_mode" json:"mark_as_read_mode"`
@@ -72,12 +78,11 @@ func (q *Queries) DeleteBot(ctx context.Context, userID string) error {
 
 const getBot = `-- name: GetBot :one
 SELECT id, user_id, basic_id, chat_mode, display_name, mark_as_read_mode, picture_url, premium_id, created_at, updated_at FROM bots
-WHERE user_id = $1
-LIMIT 1
+WHERE id = $1
 `
 
-func (q *Queries) GetBot(ctx context.Context, userID string) (Bot, error) {
-	row := q.db.QueryRowContext(ctx, getBot, userID)
+func (q *Queries) GetBot(ctx context.Context, id int32) (Bot, error) {
+	row := q.db.QueryRowContext(ctx, getBot, id)
 	var i Bot
 	err := row.Scan(
 		&i.ID,
@@ -97,11 +102,33 @@ func (q *Queries) GetBot(ctx context.Context, userID string) (Bot, error) {
 const getBotByBasicID = `-- name: GetBotByBasicID :one
 SELECT id, user_id, basic_id, chat_mode, display_name, mark_as_read_mode, picture_url, premium_id, created_at, updated_at FROM bots
 WHERE basic_id = $1
-LIMIT 1
 `
 
-func (q *Queries) GetBotByBasicID(ctx context.Context, basicID sql.NullString) (Bot, error) {
+func (q *Queries) GetBotByBasicID(ctx context.Context, basicID string) (Bot, error) {
 	row := q.db.QueryRowContext(ctx, getBotByBasicID, basicID)
+	var i Bot
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.BasicID,
+		&i.ChatMode,
+		&i.DisplayName,
+		&i.MarkAsReadMode,
+		&i.PictureUrl,
+		&i.PremiumID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getBotByUserID = `-- name: GetBotByUserID :one
+SELECT id, user_id, basic_id, chat_mode, display_name, mark_as_read_mode, picture_url, premium_id, created_at, updated_at FROM bots
+WHERE user_id = $1
+`
+
+func (q *Queries) GetBotByUserID(ctx context.Context, userID string) (Bot, error) {
+	row := q.db.QueryRowContext(ctx, getBotByUserID, userID)
 	var i Bot
 	err := row.Scan(
 		&i.ID,
@@ -160,36 +187,36 @@ func (q *Queries) ListBots(ctx context.Context) ([]Bot, error) {
 const updateBot = `-- name: UpdateBot :one
 UPDATE bots
 SET
-    basic_id = $2,
-    chat_mode = $3,
-    display_name = $4,
-    mark_as_read_mode = $5,
-    picture_url = $6,
-    premium_id = $7,
+    basic_id = $1,
+    chat_mode = $2,
+    display_name = $3,
+    mark_as_read_mode = $4,
+    picture_url = $5,
+    premium_id = $6,
     updated_at = CURRENT_TIMESTAMP
-WHERE user_id = $1
+WHERE user_id = $7
 RETURNING id, user_id, basic_id, chat_mode, display_name, mark_as_read_mode, picture_url, premium_id, created_at, updated_at
 `
 
 type UpdateBotParams struct {
-	UserID         string         `db:"user_id" json:"user_id"`
-	BasicID        sql.NullString `db:"basic_id" json:"basic_id"`
+	BasicID        string         `db:"basic_id" json:"basic_id"`
 	ChatMode       string         `db:"chat_mode" json:"chat_mode"`
 	DisplayName    string         `db:"display_name" json:"display_name"`
 	MarkAsReadMode string         `db:"mark_as_read_mode" json:"mark_as_read_mode"`
 	PictureUrl     sql.NullString `db:"picture_url" json:"picture_url"`
 	PremiumID      sql.NullString `db:"premium_id" json:"premium_id"`
+	UserID         string         `db:"user_id" json:"user_id"`
 }
 
 func (q *Queries) UpdateBot(ctx context.Context, arg UpdateBotParams) (Bot, error) {
 	row := q.db.QueryRowContext(ctx, updateBot,
-		arg.UserID,
 		arg.BasicID,
 		arg.ChatMode,
 		arg.DisplayName,
 		arg.MarkAsReadMode,
 		arg.PictureUrl,
 		arg.PremiumID,
+		arg.UserID,
 	)
 	var i Bot
 	err := row.Scan(

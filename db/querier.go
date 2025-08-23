@@ -6,14 +6,14 @@ package db
 
 import (
 	"context"
-	"database/sql"
 )
 
 type Querier interface {
 	CreateBot(ctx context.Context, arg CreateBotParams) (Bot, error)
 	DeleteBot(ctx context.Context, userID string) error
-	GetBot(ctx context.Context, userID string) (Bot, error)
-	GetBotByBasicID(ctx context.Context, basicID sql.NullString) (Bot, error)
+	GetBot(ctx context.Context, id int32) (Bot, error)
+	GetBotByBasicID(ctx context.Context, basicID string) (Bot, error)
+	GetBotByUserID(ctx context.Context, userID string) (Bot, error)
 	ListBots(ctx context.Context) ([]Bot, error)
 	UpdateBot(ctx context.Context, arg UpdateBotParams) (Bot, error)
 }

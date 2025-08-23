@@ -11,7 +11,7 @@ import (
 type Bot struct {
 	ID             int32          `db:"id" json:"id"`
 	UserID         string         `db:"user_id" json:"user_id"`
-	BasicID        sql.NullString `db:"basic_id" json:"basic_id"`
+	BasicID        string         `db:"basic_id" json:"basic_id"`
 	ChatMode       string         `db:"chat_mode" json:"chat_mode"`
 	DisplayName    string         `db:"display_name" json:"display_name"`
 	MarkAsReadMode string         `db:"mark_as_read_mode" json:"mark_as_read_mode"`
