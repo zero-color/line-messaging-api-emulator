@@ -7,7 +7,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createBot = `-- name: CreateBot :one
@@ -31,17 +32,17 @@ INSERT INTO bots (
 `
 
 type CreateBotParams struct {
-	UserID         string         `db:"user_id" json:"user_id"`
-	BasicID        string         `db:"basic_id" json:"basic_id"`
-	ChatMode       string         `db:"chat_mode" json:"chat_mode"`
-	DisplayName    string         `db:"display_name" json:"display_name"`
-	MarkAsReadMode string         `db:"mark_as_read_mode" json:"mark_as_read_mode"`
-	PictureUrl     sql.NullString `db:"picture_url" json:"picture_url"`
-	PremiumID      sql.NullString `db:"premium_id" json:"premium_id"`
+	UserID         string      `db:"user_id" json:"user_id"`
+	BasicID        string      `db:"basic_id" json:"basic_id"`
+	ChatMode       string      `db:"chat_mode" json:"chat_mode"`
+	DisplayName    string      `db:"display_name" json:"display_name"`
+	MarkAsReadMode string      `db:"mark_as_read_mode" json:"mark_as_read_mode"`
+	PictureUrl     pgtype.Text `db:"picture_url" json:"picture_url"`
+	PremiumID      pgtype.Text `db:"premium_id" json:"premium_id"`
 }
 
 func (q *Queries) CreateBot(ctx context.Context, arg CreateBotParams) (Bot, error) {
-	row := q.db.QueryRowContext(ctx, createBot,
+	row := q.db.QueryRow(ctx, createBot,
 		arg.UserID,
 		arg.BasicID,
 		arg.ChatMode,
@@ -72,7 +73,7 @@ WHERE user_id = $1
 `
 
 func (q *Queries) DeleteBot(ctx context.Context, userID string) error {
-	_, err := q.db.ExecContext(ctx, deleteBot, userID)
+	_, err := q.db.Exec(ctx, deleteBot, userID)
 	return err
 }
 
@@ -82,7 +83,7 @@ WHERE id = $1
 `
 
 func (q *Queries) GetBot(ctx context.Context, id int32) (Bot, error) {
-	row := q.db.QueryRowContext(ctx, getBot, id)
+	row := q.db.QueryRow(ctx, getBot, id)
 	var i Bot
 	err := row.Scan(
 		&i.ID,
@@ -105,7 +106,7 @@ WHERE basic_id = $1
 `
 
 func (q *Queries) GetBotByBasicID(ctx context.Context, basicID string) (Bot, error) {
-	row := q.db.QueryRowContext(ctx, getBotByBasicID, basicID)
+	row := q.db.QueryRow(ctx, getBotByBasicID, basicID)
 	var i Bot
 	err := row.Scan(
 		&i.ID,
@@ -128,7 +129,7 @@ WHERE user_id = $1
 `
 
 func (q *Queries) GetBotByUserID(ctx context.Context, userID string) (Bot, error) {
-	row := q.db.QueryRowContext(ctx, getBotByUserID, userID)
+	row := q.db.QueryRow(ctx, getBotByUserID, userID)
 	var i Bot
 	err := row.Scan(
 		&i.ID,
@@ -151,7 +152,7 @@ ORDER BY created_at DESC
 `
 
 func (q *Queries) ListBots(ctx context.Context) ([]Bot, error) {
-	rows, err := q.db.QueryContext(ctx, listBots)
+	rows, err := q.db.Query(ctx, listBots)
 	if err != nil {
 		return nil, err
 	}
@@ -175,9 +176,6 @@ func (q *Queries) ListBots(ctx context.Context) ([]Bot, error) {
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -199,17 +197,17 @@ RETURNING id, user_id, basic_id, chat_mode, display_name, mark_as_read_mode, pic
 `
 
 type UpdateBotParams struct {
-	BasicID        string         `db:"basic_id" json:"basic_id"`
-	ChatMode       string         `db:"chat_mode" json:"chat_mode"`
-	DisplayName    string         `db:"display_name" json:"display_name"`
-	MarkAsReadMode string         `db:"mark_as_read_mode" json:"mark_as_read_mode"`
-	PictureUrl     sql.NullString `db:"picture_url" json:"picture_url"`
-	PremiumID      sql.NullString `db:"premium_id" json:"premium_id"`
-	UserID         string         `db:"user_id" json:"user_id"`
+	BasicID        string      `db:"basic_id" json:"basic_id"`
+	ChatMode       string      `db:"chat_mode" json:"chat_mode"`
+	DisplayName    string      `db:"display_name" json:"display_name"`
+	MarkAsReadMode string      `db:"mark_as_read_mode" json:"mark_as_read_mode"`
+	PictureUrl     pgtype.Text `db:"picture_url" json:"picture_url"`
+	PremiumID      pgtype.Text `db:"premium_id" json:"premium_id"`
+	UserID         string      `db:"user_id" json:"user_id"`
 }
 
 func (q *Queries) UpdateBot(ctx context.Context, arg UpdateBotParams) (Bot, error) {
-	row := q.db.QueryRowContext(ctx, updateBot,
+	row := q.db.QueryRow(ctx, updateBot,
 		arg.BasicID,
 		arg.ChatMode,
 		arg.DisplayName,

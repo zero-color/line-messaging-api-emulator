@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/oapi-codegen/runtime"
 	strictnethttp "github.com/oapi-codegen/runtime/strictmiddleware/nethttp"
 )
 
@@ -113,6 +114,21 @@ type CreateBotRequestChatMode string
 // - `manual`: Auto read setting is disabled
 type CreateBotRequestMarkAsReadMode string
 
+// CreateFollowersRequest defines model for CreateFollowersRequest.
+type CreateFollowersRequest struct {
+	// Count Number of dummy followers to create
+	Count int `json:"count"`
+}
+
+// CreateFollowersResponse defines model for CreateFollowersResponse.
+type CreateFollowersResponse struct {
+	// Count Number of followers created
+	Count int `json:"count"`
+
+	// Followers List of created follower profiles
+	Followers []FollowerProfile `json:"followers"`
+}
+
 // ErrorResponse defines model for ErrorResponse.
 type ErrorResponse struct {
 	Error struct {
@@ -124,14 +140,38 @@ type ErrorResponse struct {
 	} `json:"error"`
 }
 
+// FollowerProfile defines model for FollowerProfile.
+type FollowerProfile struct {
+	// DisplayName Display name of the follower
+	DisplayName string `json:"displayName"`
+
+	// Language User's language
+	Language *string `json:"language,omitempty"`
+
+	// PictureUrl Profile image URL. HTTPS image URL. Not included if the user doesn't have a profile image.
+	PictureUrl *string `json:"pictureUrl,omitempty"`
+
+	// StatusMessage User's status message. Not included if the user doesn't have a status message.
+	StatusMessage *string `json:"statusMessage,omitempty"`
+
+	// UserId User ID of the follower
+	UserId string `json:"userId"`
+}
+
 // CreateBotJSONRequestBody defines body for CreateBot for application/json ContentType.
 type CreateBotJSONRequestBody = CreateBotRequest
+
+// CreateFollowersJSONRequestBody defines body for CreateFollowers for application/json ContentType.
+type CreateFollowersJSONRequestBody = CreateFollowersRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Create a new bot
 	// (POST /admin/bots)
 	CreateBot(w http.ResponseWriter, r *http.Request)
+	// Create dummy followers for a bot
+	// (POST /admin/bots/{botId}/followers)
+	CreateFollowers(w http.ResponseWriter, r *http.Request, botId string)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -141,6 +181,12 @@ type Unimplemented struct{}
 // Create a new bot
 // (POST /admin/bots)
 func (_ Unimplemented) CreateBot(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Create dummy followers for a bot
+// (POST /admin/bots/{botId}/followers)
+func (_ Unimplemented) CreateFollowers(w http.ResponseWriter, r *http.Request, botId string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -158,6 +204,31 @@ func (siw *ServerInterfaceWrapper) CreateBot(w http.ResponseWriter, r *http.Requ
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateBot(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateFollowers operation middleware
+func (siw *ServerInterfaceWrapper) CreateFollowers(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "botId" -------------
+	var botId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "botId", chi.URLParam(r, "botId"), &botId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "botId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateFollowers(w, r, botId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -283,6 +354,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/admin/bots", wrapper.CreateBot)
 	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/admin/bots/{botId}/followers", wrapper.CreateFollowers)
+	})
 
 	return r
 }
@@ -331,11 +405,59 @@ func (response CreateBot500JSONResponse) VisitCreateBotResponse(w http.ResponseW
 	return json.NewEncoder(w).Encode(response)
 }
 
+type CreateFollowersRequestObject struct {
+	BotId string `json:"botId"`
+	Body  *CreateFollowersJSONRequestBody
+}
+
+type CreateFollowersResponseObject interface {
+	VisitCreateFollowersResponse(w http.ResponseWriter) error
+}
+
+type CreateFollowers201JSONResponse CreateFollowersResponse
+
+func (response CreateFollowers201JSONResponse) VisitCreateFollowersResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateFollowers400JSONResponse ErrorResponse
+
+func (response CreateFollowers400JSONResponse) VisitCreateFollowersResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateFollowers404JSONResponse ErrorResponse
+
+func (response CreateFollowers404JSONResponse) VisitCreateFollowersResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateFollowers500JSONResponse ErrorResponse
+
+func (response CreateFollowers500JSONResponse) VisitCreateFollowersResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// Create a new bot
 	// (POST /admin/bots)
 	CreateBot(ctx context.Context, request CreateBotRequestObject) (CreateBotResponseObject, error)
+	// Create dummy followers for a bot
+	// (POST /admin/bots/{botId}/followers)
+	CreateFollowers(ctx context.Context, request CreateFollowersRequestObject) (CreateFollowersResponseObject, error)
 }
 
 type StrictHandlerFunc = strictnethttp.StrictHTTPHandlerFunc
@@ -391,6 +513,39 @@ func (sh *strictHandler) CreateBot(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateBotResponseObject); ok {
 		if err := validResponse.VisitCreateBotResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateFollowers operation middleware
+func (sh *strictHandler) CreateFollowers(w http.ResponseWriter, r *http.Request, botId string) {
+	var request CreateFollowersRequestObject
+
+	request.BotId = botId
+
+	var body CreateFollowersJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateFollowers(ctx, request.(CreateFollowersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateFollowers")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateFollowersResponseObject); ok {
+		if err := validResponse.VisitCreateFollowersResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

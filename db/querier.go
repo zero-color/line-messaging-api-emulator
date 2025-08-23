@@ -10,10 +10,21 @@ import (
 
 type Querier interface {
 	CreateBot(ctx context.Context, arg CreateBotParams) (Bot, error)
+	CreateBotFollower(ctx context.Context, arg CreateBotFollowerParams) (BotFollower, error)
+	CreateBotFollowers(ctx context.Context, arg []CreateBotFollowersParams) (int64, error)
+	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	CreateUsers(ctx context.Context, arg []CreateUsersParams) (int64, error)
 	DeleteBot(ctx context.Context, userID string) error
 	GetBot(ctx context.Context, id int32) (Bot, error)
 	GetBotByBasicID(ctx context.Context, basicID string) (Bot, error)
 	GetBotByUserID(ctx context.Context, userID string) (Bot, error)
+	GetBotFollowerCount(ctx context.Context, botID int32) (int64, error)
+	GetBotFollowerUserIDs(ctx context.Context, arg GetBotFollowerUserIDsParams) ([]string, error)
+	GetBotFollowers(ctx context.Context, arg GetBotFollowersParams) ([]User, error)
+	GetUser(ctx context.Context, userID string) (User, error)
+	GetUserByID(ctx context.Context, id int32) (User, error)
+	GetUsersByUserIDs(ctx context.Context, dollar_1 []string) ([]User, error)
+	IsBotFollower(ctx context.Context, arg IsBotFollowerParams) (bool, error)
 	ListBots(ctx context.Context) ([]Bot, error)
 	UpdateBot(ctx context.Context, arg UpdateBotParams) (Bot, error)
 }

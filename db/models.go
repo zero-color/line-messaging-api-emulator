@@ -5,18 +5,36 @@
 package db
 
 import (
-	"database/sql"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Bot struct {
-	ID             int32          `db:"id" json:"id"`
-	UserID         string         `db:"user_id" json:"user_id"`
-	BasicID        string         `db:"basic_id" json:"basic_id"`
-	ChatMode       string         `db:"chat_mode" json:"chat_mode"`
-	DisplayName    string         `db:"display_name" json:"display_name"`
-	MarkAsReadMode string         `db:"mark_as_read_mode" json:"mark_as_read_mode"`
-	PictureUrl     sql.NullString `db:"picture_url" json:"picture_url"`
-	PremiumID      sql.NullString `db:"premium_id" json:"premium_id"`
-	CreatedAt      sql.NullTime   `db:"created_at" json:"created_at"`
-	UpdatedAt      sql.NullTime   `db:"updated_at" json:"updated_at"`
+	ID             int32              `db:"id" json:"id"`
+	UserID         string             `db:"user_id" json:"user_id"`
+	BasicID        string             `db:"basic_id" json:"basic_id"`
+	ChatMode       string             `db:"chat_mode" json:"chat_mode"`
+	DisplayName    string             `db:"display_name" json:"display_name"`
+	MarkAsReadMode string             `db:"mark_as_read_mode" json:"mark_as_read_mode"`
+	PictureUrl     pgtype.Text        `db:"picture_url" json:"picture_url"`
+	PremiumID      pgtype.Text        `db:"premium_id" json:"premium_id"`
+	CreatedAt      pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+}
+
+type BotFollower struct {
+	ID         int32              `db:"id" json:"id"`
+	BotID      int32              `db:"bot_id" json:"bot_id"`
+	UserID     int32              `db:"user_id" json:"user_id"`
+	FollowedAt pgtype.Timestamptz `db:"followed_at" json:"followed_at"`
+}
+
+type User struct {
+	ID            int32              `db:"id" json:"id"`
+	UserID        string             `db:"user_id" json:"user_id"`
+	DisplayName   string             `db:"display_name" json:"display_name"`
+	PictureUrl    pgtype.Text        `db:"picture_url" json:"picture_url"`
+	StatusMessage pgtype.Text        `db:"status_message" json:"status_message"`
+	Language      pgtype.Text        `db:"language" json:"language"`
+	CreatedAt     pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt     pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }

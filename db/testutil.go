@@ -10,9 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DATA-DOG/go-txdb"
 	"github.com/docker/docker/client"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/ory/dockertest/v3"
@@ -22,6 +20,7 @@ import (
 )
 
 var testDatabaseURL string
+var testConnectionString string
 
 func SetupTestDB() func() {
 	pool, err := dockertest.NewPool("")
@@ -47,7 +46,7 @@ func SetupTestDB() func() {
 		Env: []string{
 			"POSTGRES_USER=postgres",
 			"POSTGRES_PASSWORD=password",
-			"POSTGRES_DB=crm_test",
+			"POSTGRES_DB=line_emulator_test",
 			"listen_addresses='*'",
 		},
 		Mounts: []string{
@@ -83,7 +82,8 @@ func SetupTestDB() func() {
 	hostPort := bindings[0].HostPort
 
 	hostAndPort := fmt.Sprintf("localhost:%s", hostPort)
-	config, err := pgx.ParseConfig(fmt.Sprintf("postgres://postgres:password@%s/crm_test?sslmode=disable", hostAndPort))
+	testConnectionString = fmt.Sprintf("postgres://postgres:password@%s/line_emulator_test?sslmode=disable", hostAndPort)
+	config, err := pgx.ParseConfig(testConnectionString)
 	if err != nil {
 		log.Fatalf("Could not parse config: %s", err)
 	}
@@ -102,8 +102,6 @@ func SetupTestDB() func() {
 		log.Fatalf("connecting to docker failed: %s", err)
 	}
 
-	txdb.Register("txdb", "pgx", databaseURL)
-
 	return func() {
 		if err := pool.Purge(resource); err != nil {
 			log.Fatalf("Could not purge resource: %s", err)
@@ -112,9 +110,25 @@ func SetupTestDB() func() {
 }
 
 func NewTestDB(t *testing.T) Querier {
-	db, err := sql.Open("txdb", uuid.New().String())
+	if testConnectionString == "" {
+		t.Fatal("testConnectionString is not set. Please ensure SetupTestDB() is called in TestMain")
+	}
+
+	conn, err := pgx.Connect(context.Background(), testConnectionString)
 	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		conn.Close(context.Background())
+	})
+
+	tx, err := conn.Begin(context.Background())
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		tx.Rollback(context.Background())
+	})
+
 	return &Queries{
-		db: db,
+		db: tx,
 	}
 }
