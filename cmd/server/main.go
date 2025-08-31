@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -61,7 +62,26 @@ func realMain() error {
 	// Messaging API routes with auth middleware
 	r.Group(func(r chi.Router) {
 		r.Use(auth.Middleware(dbClient))
-		messagingHandler := messagingapi.NewStrictHandler(s, nil)
+		
+		// Custom error handler for validation errors
+		errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
+			var validationErr *server.ValidationError
+			if errors.As(err, &validationErr) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusBadRequest)
+				json.NewEncoder(w).Encode(validationErr.ToErrorResponse())
+				return
+			}
+			// Default error handling
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		
+		messagingHandler := messagingapi.NewStrictHandlerWithOptions(s, nil, messagingapi.StrictHTTPServerOptions{
+			ResponseErrorHandlerFunc: errorHandler,
+			RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+			},
+		})
 		messagingapi.HandlerFromMux(messagingHandler, r)
 	})
 
