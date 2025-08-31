@@ -25,9 +25,12 @@ type Querier interface {
 	GetUser(ctx context.Context, userID string) (User, error)
 	GetUserByID(ctx context.Context, id int32) (User, error)
 	GetUsersByUserIDs(ctx context.Context, dollar_1 []string) ([]User, error)
+	GetWebhook(ctx context.Context, botID int32) (GetWebhookRow, error)
+	GetWebhookByBotID(ctx context.Context, botID int32) (GetWebhookByBotIDRow, error)
 	IsBotFollower(ctx context.Context, arg IsBotFollowerParams) (bool, error)
 	ListBots(ctx context.Context) ([]Bot, error)
 	UpdateBot(ctx context.Context, arg UpdateBotParams) (Bot, error)
+	UpsertWebhook(ctx context.Context, arg UpsertWebhookParams) error
 }
 
 var _ Querier = (*Queries)(nil)

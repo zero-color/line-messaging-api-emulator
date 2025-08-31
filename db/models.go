@@ -38,3 +38,12 @@ type User struct {
 	CreatedAt     pgtype.Timestamptz `db:"created_at" json:"created_at"`
 	UpdatedAt     pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }
+
+type Webhook struct {
+	ID        int32              `db:"id" json:"id"`
+	BotID     int32              `db:"bot_id" json:"bot_id"`
+	Endpoint  string             `db:"endpoint" json:"endpoint"`
+	Active    bool               `db:"active" json:"active"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+}

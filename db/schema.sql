@@ -45,3 +45,17 @@ CREATE TABLE IF NOT EXISTS bot_followers (
 -- Create indexes for bot_followers
 CREATE INDEX idx_bot_followers_bot_id ON bot_followers(bot_id);
 CREATE INDEX idx_bot_followers_user_id ON bot_followers(user_id);
+
+-- Create webhooks table for bot webhook configurations
+CREATE TABLE IF NOT EXISTS webhooks (
+    id SERIAL PRIMARY KEY,
+    bot_id INTEGER NOT NULL REFERENCES bots(id) ON DELETE CASCADE,
+    endpoint TEXT NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(bot_id)
+);
+
+-- Create index on bot_id for faster lookups
+CREATE INDEX idx_webhooks_bot_id ON webhooks(bot_id);
