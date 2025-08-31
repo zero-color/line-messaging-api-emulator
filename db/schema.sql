@@ -59,3 +59,20 @@ CREATE TABLE IF NOT EXISTS webhooks (
 
 -- Create index on bot_id for faster lookups
 CREATE INDEX idx_webhooks_bot_id ON webhooks(bot_id);
+
+-- Create messages table for tracking sent messages
+CREATE TABLE IF NOT EXISTS messages (
+    id SERIAL PRIMARY KEY,
+    bot_id INTEGER NOT NULL REFERENCES bots(id) ON DELETE CASCADE,
+    message_type VARCHAR(50) NOT NULL, -- push, broadcast, multicast, narrowcast, reply
+    recipient_type VARCHAR(50), -- user, group, room, all, multiple
+    recipient_id TEXT, -- user_id, group_id, room_id, or comma-separated list for multicast
+    content JSONB NOT NULL, -- Store the actual message content as JSON
+    retry_key UUID,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for messages
+CREATE INDEX idx_messages_bot_id ON messages(bot_id);
+CREATE INDEX idx_messages_retry_key ON messages(retry_key) WHERE retry_key IS NOT NULL;
+CREATE INDEX idx_messages_created_at ON messages(created_at);

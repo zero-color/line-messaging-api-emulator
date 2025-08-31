@@ -28,6 +28,17 @@ type BotFollower struct {
 	FollowedAt pgtype.Timestamptz `db:"followed_at" json:"followed_at"`
 }
 
+type Message struct {
+	ID            int32              `db:"id" json:"id"`
+	BotID         int32              `db:"bot_id" json:"bot_id"`
+	MessageType   string             `db:"message_type" json:"message_type"`
+	RecipientType *string            `db:"recipient_type" json:"recipient_type"`
+	RecipientID   *string            `db:"recipient_id" json:"recipient_id"`
+	Content       []byte             `db:"content" json:"content"`
+	RetryKey      pgtype.UUID        `db:"retry_key" json:"retry_key"`
+	CreatedAt     pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
 type User struct {
 	ID            int32              `db:"id" json:"id"`
 	UserID        string             `db:"user_id" json:"user_id"`

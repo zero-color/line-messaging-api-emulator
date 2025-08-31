@@ -6,12 +6,16 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
+	CountBotMessages(ctx context.Context, botID int32) (int64, error)
 	CreateBot(ctx context.Context, arg CreateBotParams) (Bot, error)
 	CreateBotFollower(ctx context.Context, arg CreateBotFollowerParams) (BotFollower, error)
 	CreateBotFollowers(ctx context.Context, arg []CreateBotFollowersParams) (int64, error)
+	CreateMessage(ctx context.Context, arg CreateMessageParams) (Message, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	CreateUsers(ctx context.Context, arg []CreateUsersParams) (int64, error)
 	DeleteBot(ctx context.Context, userID string) error
@@ -22,6 +26,8 @@ type Querier interface {
 	GetBotFollowerUser(ctx context.Context, arg GetBotFollowerUserParams) (User, error)
 	GetBotFollowerUserIDs(ctx context.Context, arg GetBotFollowerUserIDsParams) ([]string, error)
 	GetBotFollowers(ctx context.Context, arg GetBotFollowersParams) ([]User, error)
+	GetBotMessages(ctx context.Context, arg GetBotMessagesParams) ([]Message, error)
+	GetMessagesByRetryKey(ctx context.Context, retryKey pgtype.UUID) (Message, error)
 	GetUser(ctx context.Context, userID string) (User, error)
 	GetUserByID(ctx context.Context, id int32) (User, error)
 	GetUsersByUserIDs(ctx context.Context, dollar_1 []string) ([]User, error)
