@@ -11,6 +11,11 @@ run: ## Run the application
 test: ## Run tests
 	$(GO_TEST) -race ./...
 
+.PHONY: test-cover
+test-cover: ## Run tests with coverage Show test coverage
+	$(GO_TEST) -race -coverprofile=coverage.out  ./...
+	go tool cover -func=coverage.out
+
 .PHONY: lint
 lint: ## Run linters
 	go tool golangci-lint run ./...
