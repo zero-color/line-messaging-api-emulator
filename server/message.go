@@ -35,7 +35,7 @@ func (s *server) handleRetryKey(ctx context.Context, retryKey *uuid.UUID) (pgtyp
 	retryKeyUUID.Valid = true
 
 	// Check if message with this retry key already exists
-	_, err = s.db.GetMessagesByRetryKey(ctx, retryKeyUUID)
+	_, err = db.FromContext(ctx).Queries().GetMessagesByRetryKey(ctx, retryKeyUUID)
 	if err == nil {
 		// Message already exists, indicate early return
 		return retryKeyUUID, true, nil
@@ -76,7 +76,7 @@ func (s *server) Broadcast(ctx context.Context, request messagingapi.BroadcastRe
 	// Store the message in database
 	recipientType := "all"
 
-	_, err = s.db.CreateMessage(ctx, db.CreateMessageParams{
+	_, err = db.FromContext(ctx).Queries().CreateMessage(ctx, db.CreateMessageParams{
 		BotID:         botID,
 		MessageType:   "broadcast",
 		RecipientType: &recipientType,
@@ -137,7 +137,7 @@ func (s *server) Multicast(ctx context.Context, request messagingapi.MulticastRe
 	recipientIDs := strings.Join(request.Body.To, ",")
 	recipientType := "multiple"
 
-	_, err = s.db.CreateMessage(ctx, db.CreateMessageParams{
+	_, err = db.FromContext(ctx).Queries().CreateMessage(ctx, db.CreateMessageParams{
 		BotID:         botID,
 		MessageType:   "multicast",
 		RecipientType: &recipientType,
@@ -198,7 +198,7 @@ func (s *server) Narrowcast(ctx context.Context, request messagingapi.Narrowcast
 		recipientID = &filterStr
 	}
 
-	_, err = s.db.CreateMessage(ctx, db.CreateMessageParams{
+	_, err = db.FromContext(ctx).Queries().CreateMessage(ctx, db.CreateMessageParams{
 		BotID:         botID,
 		MessageType:   "narrowcast",
 		RecipientType: &recipientType,
@@ -254,7 +254,7 @@ func (s *server) PushMessage(ctx context.Context, request messagingapi.PushMessa
 	recipientType := "user"
 	recipientID := request.Body.To
 
-	msg, err := s.db.CreateMessage(ctx, db.CreateMessageParams{
+	msg, err := db.FromContext(ctx).Queries().CreateMessage(ctx, db.CreateMessageParams{
 		BotID:         botID,
 		MessageType:   "push",
 		RecipientType: &recipientType,
@@ -306,7 +306,7 @@ func (s *server) ReplyMessage(ctx context.Context, request messagingapi.ReplyMes
 	}
 
 	// Check if this reply token has been used before
-	if _, err := s.db.GetMessagesByRetryKey(ctx, replyTokenUUID); err == nil {
+	if _, err := db.FromContext(ctx).Queries().GetMessagesByRetryKey(ctx, replyTokenUUID); err == nil {
 		// Reply token has already been used, return 400 error
 		validationErr := NewValidationError("Invalid reply token")
 		validationErr.AddDetail("Reply token has already been used or expired", "replyToken")
@@ -323,7 +323,7 @@ func (s *server) ReplyMessage(ctx context.Context, request messagingapi.ReplyMes
 	messageType := "reply"
 	recipientType := "reply"
 
-	msg, err := s.db.CreateMessage(ctx, db.CreateMessageParams{
+	msg, err := db.FromContext(ctx).Queries().CreateMessage(ctx, db.CreateMessageParams{
 		BotID:         botID,
 		MessageType:   messageType,
 		RecipientType: &recipientType,

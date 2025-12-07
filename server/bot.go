@@ -5,12 +5,13 @@ import (
 	"fmt"
 
 	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
+	"github.com/zero-color/line-messaging-api-emulator/db"
 	"github.com/zero-color/line-messaging-api-emulator/internal/auth"
 )
 
 // GetBotInfo gets information about the bot
 func (s *server) GetBotInfo(ctx context.Context, _ messagingapi.GetBotInfoRequestObject) (messagingapi.GetBotInfoResponseObject, error) {
-	bot, err := s.db.GetBot(ctx, auth.GetBotID(ctx))
+	bot, err := db.FromContext(ctx).Queries().GetBot(ctx, auth.GetBotID(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get bot: %w", err)
 	}

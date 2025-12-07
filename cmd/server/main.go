@@ -15,6 +15,7 @@ import (
 	"github.com/zero-color/line-messaging-api-emulator/db"
 	"github.com/zero-color/line-messaging-api-emulator/internal/auth"
 	"github.com/zero-color/line-messaging-api-emulator/server"
+	"github.com/zero-color/line-messaging-api-emulator/webhook"
 )
 
 type options struct {
@@ -51,9 +52,11 @@ func realMain() error {
 	}
 	defer sqlDB.Close()
 
-	dbClient := db.New(sqlDB)
-	s := server.New(dbClient)
+	dbClient := db.NewClient(sqlDB)
+	webhookClient := webhook.NewClient()
+	s := server.New(webhookClient)
 	r := chi.NewRouter()
+	r.Use(db.HTTPMiddleware(dbClient))
 
 	// Admin API routes (no auth required)
 	adminHandler := adminapi.NewStrictHandler(s, nil)
@@ -61,8 +64,8 @@ func realMain() error {
 
 	// Messaging API routes with auth middleware
 	r.Group(func(r chi.Router) {
-		r.Use(auth.Middleware(dbClient))
-		
+		r.Use(auth.Middleware())
+
 		// Custom error handler for validation errors
 		errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
 			var validationErr *server.ValidationError
@@ -75,7 +78,7 @@ func realMain() error {
 			// Default error handling
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		
+
 		messagingHandler := messagingapi.NewStrictHandlerWithOptions(s, nil, messagingapi.StrictHTTPServerOptions{
 			ResponseErrorHandlerFunc: errorHandler,
 			RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {

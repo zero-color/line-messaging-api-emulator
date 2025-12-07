@@ -109,7 +109,7 @@ func SetupTestDB() func() {
 	}
 }
 
-func NewTestDB(t *testing.T) Querier {
+func NewTestDB(t *testing.T) DB {
 	if testConnectionString == "" {
 		t.Fatal("testConnectionString is not set. Please ensure SetupTestDB() is called in TestMain")
 	}
@@ -128,7 +128,5 @@ func NewTestDB(t *testing.T) Querier {
 		tx.Rollback(context.Background())
 	})
 
-	return &Queries{
-		db: tx,
-	}
+	return newTxClient(tx)
 }

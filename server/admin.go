@@ -52,7 +52,7 @@ func (s *server) CreateBot(ctx context.Context, request adminapi.CreateBotReques
 		premiumID = request.Body.PremiumId
 	}
 
-	bot, err := s.db.CreateBot(ctx, db.CreateBotParams{
+	bot, err := db.FromContext(ctx).Queries().CreateBot(ctx, db.CreateBotParams{
 		UserID:         userID,
 		BasicID:        basicID,
 		ChatMode:       chatMode,
@@ -100,7 +100,7 @@ func (s *server) CreateBot(ctx context.Context, request adminapi.CreateBotReques
 
 // CreateFollowers creates dummy followers for a bot using bulk insert
 func (s *server) CreateFollowers(ctx context.Context, request adminapi.CreateFollowersRequestObject) (adminapi.CreateFollowersResponseObject, error) {
-	bot, err := s.db.GetBotByUserID(ctx, request.BotId)
+	bot, err := db.FromContext(ctx).Queries().GetBotByUserID(ctx, request.BotId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return adminapi.CreateFollowers404JSONResponse{
@@ -155,7 +155,7 @@ func (s *server) CreateFollowers(ctx context.Context, request adminapi.CreateFol
 
 	// Get all created users
 	userIDs := extractUserIDs(users)
-	createdUsers, err := s.db.GetUsersByUserIDs(ctx, userIDs)
+	createdUsers, err := db.FromContext(ctx).Queries().GetUsersByUserIDs(ctx, userIDs)
 	if err != nil {
 		return adminapi.CreateFollowers500JSONResponse{
 			Error: struct {
@@ -289,7 +289,7 @@ func generateLanguage(fake *gofakeit.Faker) *string {
 
 // bulkInsertUsers performs bulk insert of users with fallback to individual inserts
 func (s *server) bulkInsertUsers(ctx context.Context, users []db.CreateUsersParams) error {
-	_, err := s.db.CreateUsers(ctx, users)
+	_, err := db.FromContext(ctx).Queries().CreateUsers(ctx, users)
 	if err != nil {
 		return err
 	}
@@ -317,7 +317,7 @@ func (s *server) createBotFollowerRelationships(ctx context.Context, botID int32
 	}
 
 	// Bulk insert bot-follower relationships
-	if _, err := s.db.CreateBotFollowers(ctx, followerRecords); err != nil {
+	if _, err := db.FromContext(ctx).Queries().CreateBotFollowers(ctx, followerRecords); err != nil {
 		return err
 	}
 	return nil

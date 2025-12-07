@@ -11,14 +11,18 @@ import (
 	"github.com/zero-color/line-messaging-api-emulator/db"
 	"github.com/zero-color/line-messaging-api-emulator/internal/auth"
 	"github.com/zero-color/line-messaging-api-emulator/server"
+	"github.com/zero-color/line-messaging-api-emulator/webhook"
 )
 
 func TestGetProfile(t *testing.T) {
 	dbClient := db.NewTestDB(t)
-	srv := server.New(dbClient)
+	srv := server.New(webhook.NewTestClient())
+
+	// Create a context with the db client injected
+	baseCtx := db.ToContext(context.Background(), dbClient)
 
 	// Create a bot
-	bot, err := dbClient.CreateBot(context.Background(), db.CreateBotParams{
+	bot, err := dbClient.Queries().CreateBot(baseCtx, db.CreateBotParams{
 		UserID:         "test-bot-id",
 		BasicID:        "test-basic-id",
 		ChatMode:       "chat",
@@ -31,7 +35,7 @@ func TestGetProfile(t *testing.T) {
 	pictureUrl := "https://example.com/picture.jpg"
 	statusMessage := "I love LINE!"
 	language := "en"
-	user, err := dbClient.CreateUser(context.Background(), db.CreateUserParams{
+	user, err := dbClient.Queries().CreateUser(baseCtx, db.CreateUserParams{
 		UserID:        "test-user-id",
 		DisplayName:   "Test User",
 		PictureUrl:    &pictureUrl,
@@ -42,14 +46,14 @@ func TestGetProfile(t *testing.T) {
 
 	t.Run("success - user is a follower", func(t *testing.T) {
 		// Make the user a follower of the bot
-		_, err := dbClient.CreateBotFollower(context.Background(), db.CreateBotFollowerParams{
+		_, err := dbClient.Queries().CreateBotFollower(baseCtx, db.CreateBotFollowerParams{
 			BotID:  bot.ID,
 			UserID: user.ID,
 		})
 		require.NoError(t, err)
 
-		// Set bot ID in context
-		ctx := auth.SetBotID(context.Background(), bot.ID)
+		// Set bot ID in context (db is already in baseCtx)
+		ctx := auth.SetBotID(baseCtx, bot.ID)
 
 		resp, err := srv.GetProfile(ctx, messagingapi.GetProfileRequestObject{
 			UserId: "test-user-id",
@@ -70,7 +74,7 @@ func TestGetProfile(t *testing.T) {
 
 	t.Run("error - user is not a follower", func(t *testing.T) {
 		// Create another bot
-		otherBot, err := dbClient.CreateBot(context.Background(), db.CreateBotParams{
+		otherBot, err := dbClient.Queries().CreateBot(baseCtx, db.CreateBotParams{
 			UserID:         "other-bot-id",
 			BasicID:        "other-basic-id",
 			ChatMode:       "bot",
@@ -79,8 +83,8 @@ func TestGetProfile(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		// Set the other bot ID in context
-		ctx := auth.SetBotID(context.Background(), otherBot.ID)
+		// Set the other bot ID in context (db is already in baseCtx)
+		ctx := auth.SetBotID(baseCtx, otherBot.ID)
 
 		resp, err := srv.GetProfile(ctx, messagingapi.GetProfileRequestObject{
 			UserId: "test-user-id",
@@ -92,8 +96,8 @@ func TestGetProfile(t *testing.T) {
 	})
 
 	t.Run("error - user does not exist", func(t *testing.T) {
-		// Set bot ID in context
-		ctx := auth.SetBotID(context.Background(), bot.ID)
+		// Set bot ID in context (db is already in baseCtx)
+		ctx := auth.SetBotID(baseCtx, bot.ID)
 
 		resp, err := srv.GetProfile(ctx, messagingapi.GetProfileRequestObject{
 			UserId: "non-existent-user",
@@ -106,21 +110,21 @@ func TestGetProfile(t *testing.T) {
 
 	t.Run("success - user without optional fields", func(t *testing.T) {
 		// Create a user without optional fields
-		simpleUser, err := dbClient.CreateUser(context.Background(), db.CreateUserParams{
+		simpleUser, err := dbClient.Queries().CreateUser(baseCtx, db.CreateUserParams{
 			UserID:      "simple-user-id",
 			DisplayName: "Simple User",
 		})
 		require.NoError(t, err)
 
 		// Make the user a follower of the bot
-		_, err = dbClient.CreateBotFollower(context.Background(), db.CreateBotFollowerParams{
+		_, err = dbClient.Queries().CreateBotFollower(baseCtx, db.CreateBotFollowerParams{
 			BotID:  bot.ID,
 			UserID: simpleUser.ID,
 		})
 		require.NoError(t, err)
 
-		// Set bot ID in context
-		ctx := auth.SetBotID(context.Background(), bot.ID)
+		// Set bot ID in context (db is already in baseCtx)
+		ctx := auth.SetBotID(baseCtx, bot.ID)
 
 		resp, err := srv.GetProfile(ctx, messagingapi.GetProfileRequestObject{
 			UserId: "simple-user-id",
@@ -139,10 +143,13 @@ func TestGetProfile(t *testing.T) {
 
 func TestGetFollowers(t *testing.T) {
 	dbClient := db.NewTestDB(t)
-	srv := server.New(dbClient)
+	srv := server.New(webhook.NewTestClient())
+
+	// Create a context with the db client injected
+	baseCtx := db.ToContext(context.Background(), dbClient)
 
 	// Create a bot
-	bot, err := dbClient.CreateBot(context.Background(), db.CreateBotParams{
+	bot, err := dbClient.Queries().CreateBot(baseCtx, db.CreateBotParams{
 		UserID:         "test-bot-id",
 		BasicID:        "test-basic-id",
 		ChatMode:       "chat",
@@ -155,14 +162,14 @@ func TestGetFollowers(t *testing.T) {
 	userIDs := []string{}
 	for i := 0; i < 5; i++ {
 		userID := fmt.Sprintf("user-%d", i)
-		user, err := dbClient.CreateUser(context.Background(), db.CreateUserParams{
+		user, err := dbClient.Queries().CreateUser(baseCtx, db.CreateUserParams{
 			UserID:      userID,
 			DisplayName: fmt.Sprintf("User %d", i),
 		})
 		require.NoError(t, err)
 
 		// Make the user a follower of the bot
-		_, err = dbClient.CreateBotFollower(context.Background(), db.CreateBotFollowerParams{
+		_, err = dbClient.Queries().CreateBotFollower(baseCtx, db.CreateBotFollowerParams{
 			BotID:  bot.ID,
 			UserID: user.ID,
 		})
@@ -171,8 +178,8 @@ func TestGetFollowers(t *testing.T) {
 		userIDs = append(userIDs, userID)
 	}
 
-	// Set bot ID in context
-	ctx := auth.SetBotID(context.Background(), bot.ID)
+	// Set bot ID in context (db is already in baseCtx)
+	ctx := auth.SetBotID(baseCtx, bot.ID)
 
 	t.Run("success - get all followers", func(t *testing.T) {
 		resp, err := srv.GetFollowers(ctx, messagingapi.GetFollowersRequestObject{})
@@ -255,7 +262,7 @@ func TestGetFollowers(t *testing.T) {
 
 	t.Run("success - empty followers list", func(t *testing.T) {
 		// Create another bot with no followers
-		emptyBot, err := dbClient.CreateBot(context.Background(), db.CreateBotParams{
+		emptyBot, err := dbClient.Queries().CreateBot(baseCtx, db.CreateBotParams{
 			UserID:         "empty-bot-id",
 			BasicID:        "empty-basic-id",
 			ChatMode:       "bot",
@@ -264,8 +271,8 @@ func TestGetFollowers(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		// Set the empty bot ID in context
-		emptyCtx := auth.SetBotID(context.Background(), emptyBot.ID)
+		// Set the empty bot ID in context (db is already in baseCtx)
+		emptyCtx := auth.SetBotID(baseCtx, emptyBot.ID)
 
 		resp, err := srv.GetFollowers(emptyCtx, messagingapi.GetFollowersRequestObject{})
 		require.NoError(t, err)

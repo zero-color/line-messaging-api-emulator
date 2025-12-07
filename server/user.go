@@ -15,7 +15,7 @@ import (
 func (s *server) GetProfile(ctx context.Context, request messagingapi.GetProfileRequestObject) (messagingapi.GetProfileResponseObject, error) {
 	botID := auth.GetBotID(ctx)
 
-	user, err := s.db.GetBotFollowerUser(ctx, db.GetBotFollowerUserParams{
+	user, err := db.FromContext(ctx).Queries().GetBotFollowerUser(ctx, db.GetBotFollowerUserParams{
 		BotID:  botID,
 		UserID: request.UserId,
 	})
@@ -62,7 +62,7 @@ func (s *server) GetFollowers(ctx context.Context, request messagingapi.GetFollo
 	}
 
 	// Get followers from database
-	followers, err := s.db.GetBotFollowers(ctx, db.GetBotFollowersParams{
+	followers, err := db.FromContext(ctx).Queries().GetBotFollowers(ctx, db.GetBotFollowersParams{
 		BotID:  botID,
 		Limit:  limit + 1, // Get one extra to check if there are more
 		Offset: offset,

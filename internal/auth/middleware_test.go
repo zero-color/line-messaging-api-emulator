@@ -15,9 +15,9 @@ import (
 func TestMiddleware(t *testing.T) {
 	// Setup test database
 	dbClient := db.NewTestDB(t)
-	
+
 	// Create a test bot
-	bot, err := dbClient.CreateBot(context.Background(), db.CreateBotParams{
+	bot, err := dbClient.Queries().CreateBot(context.Background(), db.CreateBotParams{
 		UserID:         "test-user-id",
 		BasicID:        "@testbot",
 		ChatMode:       "bot",
@@ -25,11 +25,6 @@ func TestMiddleware(t *testing.T) {
 		MarkAsReadMode: "manual",
 	})
 	require.NoError(t, err)
-
-	// Create the middleware - need to cast to *db.Queries
-	queries, ok := dbClient.(*db.Queries)
-	require.True(t, ok, "Failed to cast to *db.Queries")
-	middleware := auth.Middleware(queries)
 
 	// Create a test handler that will be wrapped by the middleware
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -40,8 +35,8 @@ func TestMiddleware(t *testing.T) {
 		w.Write([]byte("success"))
 	})
 
-	// Wrap the test handler with the middleware
-	handler := middleware(testHandler)
+	// Wrap the test handler with db middleware first, then auth middleware
+	handler := db.HTTPMiddleware(dbClient)(auth.Middleware()(testHandler))
 
 	t.Run("missing authorization header", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/test", nil)
@@ -153,9 +148,9 @@ func TestGetBotID(t *testing.T) {
 func TestMiddlewareWithMultipleBots(t *testing.T) {
 	// Setup test database
 	dbClient := db.NewTestDB(t)
-	
+
 	// Create multiple test bots
-	bot1, err := dbClient.CreateBot(context.Background(), db.CreateBotParams{
+	bot1, err := dbClient.Queries().CreateBot(context.Background(), db.CreateBotParams{
 		UserID:         "bot1-user-id",
 		BasicID:        "@bot1",
 		ChatMode:       "bot",
@@ -164,7 +159,7 @@ func TestMiddlewareWithMultipleBots(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	bot2, err := dbClient.CreateBot(context.Background(), db.CreateBotParams{
+	bot2, err := dbClient.Queries().CreateBot(context.Background(), db.CreateBotParams{
 		UserID:         "bot2-user-id",
 		BasicID:        "@bot2",
 		ChatMode:       "chat",
@@ -173,11 +168,6 @@ func TestMiddlewareWithMultipleBots(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// Create the middleware - need to cast to *db.Queries
-	queries, ok := dbClient.(*db.Queries)
-	require.True(t, ok, "Failed to cast to *db.Queries")
-	middleware := auth.Middleware(queries)
-
 	// Create a test handler that captures the bot ID
 	var capturedBotID int32
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -185,7 +175,8 @@ func TestMiddlewareWithMultipleBots(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	handler := middleware(testHandler)
+	// Wrap the test handler with db middleware first, then auth middleware
+	handler := db.HTTPMiddleware(dbClient)(auth.Middleware()(testHandler))
 
 	t.Run("authenticates with first bot", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/test", nil)

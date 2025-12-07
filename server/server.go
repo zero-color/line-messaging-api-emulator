@@ -3,7 +3,7 @@ package server
 import (
 	"github.com/zero-color/line-messaging-api-emulator/api/adminapi"
 	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
-	"github.com/zero-color/line-messaging-api-emulator/db"
+	"github.com/zero-color/line-messaging-api-emulator/webhook"
 )
 
 type Server interface {
@@ -12,11 +12,11 @@ type Server interface {
 }
 
 type server struct {
-	db db.Querier
+	webhookClient webhook.Client
 }
 
-func New(db db.Querier) Server {
+func New(webhookClient webhook.Client) Server {
 	return &server{
-		db: db,
+		webhookClient: webhookClient,
 	}
 }

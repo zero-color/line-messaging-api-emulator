@@ -11,13 +11,15 @@ import (
 	"github.com/zero-color/line-messaging-api-emulator/db"
 	"github.com/zero-color/line-messaging-api-emulator/internal/auth"
 	"github.com/zero-color/line-messaging-api-emulator/server"
+	"github.com/zero-color/line-messaging-api-emulator/webhook"
 )
 
 func TestGetBotInfo(t *testing.T) {
 	dbClient := db.NewTestDB(t)
-	srv := server.New(dbClient)
+	srv := server.New(webhook.NewTestClient())
 
-	ctx := context.Background()
+	// Create a context with the db client injected
+	ctx := db.ToContext(context.Background(), dbClient)
 
 	t.Run("returns bot info when bot exists", func(t *testing.T) {
 		// Create a bot first
@@ -38,11 +40,11 @@ func TestGetBotInfo(t *testing.T) {
 		require.True(t, ok)
 
 		// Get the bot from database to get its ID
-		bot, err := dbClient.GetBotByUserID(ctx, createdBot.UserId)
+		bot, err := dbClient.Queries().GetBotByUserID(ctx, createdBot.UserId)
 		require.NoError(t, err)
 
-		// Add bot ID to context
-		ctx := auth.SetBotID(context.Background(), bot.ID)
+		// Add bot ID to context (db is already in ctx)
+		ctx := auth.SetBotID(ctx, bot.ID)
 
 		// Get bot info
 		req := messagingapi.GetBotInfoRequestObject{}
@@ -61,11 +63,11 @@ func TestGetBotInfo(t *testing.T) {
 	})
 
 	t.Run("returns error when bot does not exist", func(t *testing.T) {
-		// Use a non-existent bot ID
-		ctx := auth.SetBotID(context.Background(), 99999)
+		// Use a non-existent bot ID (db is already in ctx)
+		testCtx := auth.SetBotID(ctx, 99999)
 
 		req := messagingapi.GetBotInfoRequestObject{}
-		resp, err := srv.GetBotInfo(ctx, req)
+		resp, err := srv.GetBotInfo(testCtx, req)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to get bot")
 		assert.Nil(t, resp)
@@ -97,11 +99,11 @@ func TestGetBotInfo(t *testing.T) {
 		require.True(t, ok)
 
 		// Get first bot from database to get its ID
-		bot1, err := dbClient.GetBotByUserID(ctx, firstBot.UserId)
+		bot1, err := dbClient.Queries().GetBotByUserID(ctx, firstBot.UserId)
 		require.NoError(t, err)
 
 		// Get second bot from database to get its ID
-		bot2, err := dbClient.GetBotByUserID(ctx, secondBot.UserId)
+		bot2, err := dbClient.Queries().GetBotByUserID(ctx, secondBot.UserId)
 		require.NoError(t, err)
 
 		// Test with first bot ID

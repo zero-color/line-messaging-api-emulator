@@ -20,7 +20,7 @@ import (
 func (s *server) GetWebhookEndpoint(ctx context.Context, _ messagingapi.GetWebhookEndpointRequestObject) (messagingapi.GetWebhookEndpointResponseObject, error) {
 	botID := auth.GetBotID(ctx)
 
-	webhook, err := s.db.GetWebhook(ctx, botID)
+	webhook, err := db.FromContext(ctx).Queries().GetWebhook(ctx, botID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// No webhook configured, return empty endpoint with active=false
@@ -53,7 +53,7 @@ func (s *server) SetWebhookEndpoint(ctx context.Context, request messagingapi.Se
 		}
 	}
 
-	err := s.db.UpsertWebhook(ctx, db.UpsertWebhookParams{
+	err := db.FromContext(ctx).Queries().UpsertWebhook(ctx, db.UpsertWebhookParams{
 		BotID:    botID,
 		Endpoint: request.Body.Endpoint,
 	})
@@ -69,7 +69,7 @@ func (s *server) TestWebhookEndpoint(ctx context.Context, request messagingapi.T
 	botID := auth.GetBotID(ctx)
 
 	// Get the bot to get its user ID for the test payload
-	bot, err := s.db.GetBot(ctx, botID)
+	bot, err := db.FromContext(ctx).Queries().GetBot(ctx, botID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get bot: %w", err)
 	}
@@ -80,7 +80,7 @@ func (s *server) TestWebhookEndpoint(ctx context.Context, request messagingapi.T
 		endpoint = *request.Body.Endpoint
 	} else {
 		// Test the currently configured endpoint
-		webhook, err := s.db.GetWebhook(ctx, botID)
+		webhook, err := db.FromContext(ctx).Queries().GetWebhook(ctx, botID)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				falseVal := false

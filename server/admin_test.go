@@ -6,19 +6,19 @@ import (
 	"testing"
 
 	"github.com/samber/lo"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/zero-color/line-messaging-api-emulator/api/adminapi"
 	"github.com/zero-color/line-messaging-api-emulator/db"
 	"github.com/zero-color/line-messaging-api-emulator/server"
+	"github.com/zero-color/line-messaging-api-emulator/webhook"
 )
 
 func TestCreateBot(t *testing.T) {
 	dbClient := db.NewTestDB(t)
-	srv := server.New(dbClient)
+	srv := server.New(webhook.NewTestClient())
 
-	ctx := context.Background()
+	ctx := db.ToContext(context.Background(), dbClient)
 
 	t.Run("create bot with minimal fields", func(t *testing.T) {
 		displayName := "Test Bot"
@@ -100,8 +100,8 @@ func TestCreateBot(t *testing.T) {
 
 func TestCreateFollowers(t *testing.T) {
 	dbClient := db.NewTestDB(t)
-	srv := server.New(dbClient)
-	ctx := context.Background()
+	srv := server.New(webhook.NewTestClient())
+	ctx := db.ToContext(context.Background(), dbClient)
 
 	// First, create a bot
 	createBotReq := adminapi.CreateBotRequestObject{

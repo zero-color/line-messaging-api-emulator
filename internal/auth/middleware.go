@@ -13,7 +13,7 @@ import (
 type botIdContextKey struct {
 }
 
-func Middleware(queries *db.Queries) func(http.Handler) http.Handler {
+func Middleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
@@ -30,7 +30,7 @@ func Middleware(queries *db.Queries) func(http.Handler) http.Handler {
 
 			botUserID := parts[1]
 
-			bot, err := queries.GetBotByUserID(r.Context(), botUserID)
+			bot, err := db.FromContext(r.Context()).Queries().GetBotByUserID(r.Context(), botUserID)
 			if err != nil {
 				if errors.Is(err, sql.ErrNoRows) {
 					http.Error(w, "Unauthorized: bot not found", http.StatusUnauthorized)

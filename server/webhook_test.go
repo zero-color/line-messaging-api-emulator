@@ -14,12 +14,13 @@ import (
 	"github.com/zero-color/line-messaging-api-emulator/db"
 	"github.com/zero-color/line-messaging-api-emulator/internal/auth"
 	"github.com/zero-color/line-messaging-api-emulator/server"
+	"github.com/zero-color/line-messaging-api-emulator/webhook"
 )
 
 func TestGetWebhookEndpoint(t *testing.T) {
 	dbClient := db.NewTestDB(t)
-	srv := server.New(dbClient)
-	ctx := context.Background()
+	srv := server.New(webhook.NewTestClient())
+	ctx := db.ToContext(context.Background(), dbClient)
 
 	t.Run("returns webhook endpoint when configured", func(t *testing.T) {
 		// Create a bot first
@@ -34,10 +35,10 @@ func TestGetWebhookEndpoint(t *testing.T) {
 		require.True(t, ok)
 
 		// Get the bot from database to get its ID
-		bot, err := dbClient.GetBotByUserID(ctx, createdBot.UserId)
+		bot, err := dbClient.Queries().GetBotByUserID(ctx, createdBot.UserId)
 		require.NoError(t, err)
 
-		// Add bot ID to context
+		// Add bot ID to context (db is already in ctx)
 		botCtx := auth.SetBotID(ctx, bot.ID)
 
 		// Set a webhook endpoint
@@ -74,10 +75,10 @@ func TestGetWebhookEndpoint(t *testing.T) {
 		require.True(t, ok)
 
 		// Get the bot from database to get its ID
-		bot, err := dbClient.GetBotByUserID(ctx, createdBot.UserId)
+		bot, err := dbClient.Queries().GetBotByUserID(ctx, createdBot.UserId)
 		require.NoError(t, err)
 
-		// Add bot ID to context
+		// Add bot ID to context (db is already in ctx)
 		botCtx := auth.SetBotID(ctx, bot.ID)
 
 		// Get the webhook endpoint (should be empty)
@@ -109,8 +110,8 @@ func TestGetWebhookEndpoint(t *testing.T) {
 
 func TestSetWebhookEndpoint(t *testing.T) {
 	dbClient := db.NewTestDB(t)
-	srv := server.New(dbClient)
-	ctx := context.Background()
+	srv := server.New(webhook.NewTestClient())
+	ctx := db.ToContext(context.Background(), dbClient)
 
 	// Create a bot for all tests
 	createReq := adminapi.CreateBotRequestObject{
@@ -124,7 +125,7 @@ func TestSetWebhookEndpoint(t *testing.T) {
 	require.True(t, ok)
 
 	// Get the bot from database to get its ID
-	bot, err := dbClient.GetBotByUserID(ctx, createdBot.UserId)
+	bot, err := dbClient.Queries().GetBotByUserID(ctx, createdBot.UserId)
 	require.NoError(t, err)
 	botCtx := auth.SetBotID(ctx, bot.ID)
 
@@ -231,8 +232,8 @@ func TestSetWebhookEndpoint(t *testing.T) {
 
 func TestTestWebhookEndpoint(t *testing.T) {
 	dbClient := db.NewTestDB(t)
-	srv := server.New(dbClient)
-	ctx := context.Background()
+	srv := server.New(webhook.NewTestClient())
+	ctx := db.ToContext(context.Background(), dbClient)
 
 	// Create a bot for all tests
 	createReq := adminapi.CreateBotRequestObject{
@@ -246,7 +247,7 @@ func TestTestWebhookEndpoint(t *testing.T) {
 	require.True(t, ok)
 
 	// Get the bot from database to get its ID
-	bot, err := dbClient.GetBotByUserID(ctx, createdBot.UserId)
+	bot, err := dbClient.Queries().GetBotByUserID(ctx, createdBot.UserId)
 	require.NoError(t, err)
 	botCtx := auth.SetBotID(ctx, bot.ID)
 
@@ -346,7 +347,7 @@ func TestTestWebhookEndpoint(t *testing.T) {
 		require.True(t, ok)
 
 		// Get the bot from database to get its ID
-		bot, err := dbClient.GetBotByUserID(ctx, createdBot.UserId)
+		bot, err := dbClient.Queries().GetBotByUserID(ctx, createdBot.UserId)
 		require.NoError(t, err)
 		newBotCtx := auth.SetBotID(ctx, bot.ID)
 
