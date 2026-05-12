@@ -14,6 +14,7 @@ import (
 	"github.com/zero-color/line-messaging-api-emulator/db"
 	"github.com/zero-color/line-messaging-api-emulator/pkg/pgutil"
 	"github.com/zero-color/line-messaging-api-emulator/pkg/shortid"
+	"github.com/zero-color/line-messaging-api-emulator/webhook"
 )
 
 // CreateBot creates a new bot
@@ -181,6 +182,8 @@ func (s *server) CreateFollowers(ctx context.Context, request adminapi.CreateFol
 		}, nil
 	}
 
+	s.sendFollowEventsToWebhook(ctx, bot, createdUsers)
+
 	// Build response
 	followers := s.buildFollowerProfiles(createdUsers)
 
@@ -340,4 +343,32 @@ func (s *server) buildFollowerProfiles(users []db.User) []adminapi.FollowerProfi
 	}
 
 	return followers
+}
+
+// sendFollowEventsToWebhook fires follow events for newly created followers
+// at the bot's configured webhook endpoint, if any. The call is asynchronous
+// so it does not block the admin response; the request context may be canceled
+// once the handler returns, hence context.Background() below.
+func (s *server) sendFollowEventsToWebhook(ctx context.Context, bot db.Bot, users []db.User) {
+	webhookConfig, err := db.FromContext(ctx).Queries().GetWebhookByBotID(ctx, bot.ID)
+	if err != nil {
+		return
+	}
+	if !webhookConfig.Active || webhookConfig.Endpoint == "" {
+		return
+	}
+
+	followUsers := make([]webhook.FollowUser, 0, len(users))
+	for _, user := range users {
+		followUsers = append(followUsers, webhook.FollowUser{UserID: user.UserID})
+	}
+
+	req := &webhook.FollowEventRequest{
+		Endpoint:  webhookConfig.Endpoint,
+		BotUserID: bot.UserID,
+		Users:     followUsers,
+	}
+	go func() {
+		_ = s.webhookClient.SendFollowEvents(context.Background(), req)
+	}()
 }

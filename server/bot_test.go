@@ -44,7 +44,7 @@ func TestGetBotInfo(t *testing.T) {
 		require.NoError(t, err)
 
 		// Add bot ID to context (db is already in ctx)
-		ctx := auth.SetBotID(ctx, bot.ID)
+		ctx := auth.SetBot(ctx, &bot)
 
 		// Get bot info
 		req := messagingapi.GetBotInfoRequestObject{}
@@ -64,7 +64,7 @@ func TestGetBotInfo(t *testing.T) {
 
 	t.Run("returns error when bot does not exist", func(t *testing.T) {
 		// Use a non-existent bot ID (db is already in ctx)
-		testCtx := auth.SetBotID(ctx, 99999)
+		testCtx := auth.SetBot(ctx, &db.Bot{ID: 9999})
 
 		req := messagingapi.GetBotInfoRequestObject{}
 		resp, err := srv.GetBotInfo(testCtx, req)
@@ -107,7 +107,7 @@ func TestGetBotInfo(t *testing.T) {
 		require.NoError(t, err)
 
 		// Test with first bot ID
-		ctxWithBot1 := auth.SetBotID(ctx, bot1.ID)
+		ctxWithBot1 := auth.SetBot(ctx, &bot1)
 		req := messagingapi.GetBotInfoRequestObject{}
 		resp1, err := srv.GetBotInfo(ctxWithBot1, req)
 		require.NoError(t, err)
@@ -117,7 +117,7 @@ func TestGetBotInfo(t *testing.T) {
 		assert.Equal(t, firstBotName, botResp1.DisplayName)
 
 		// Test with second bot ID
-		ctxWithBot2 := auth.SetBotID(ctx, bot2.ID)
+		ctxWithBot2 := auth.SetBot(ctx, &bot2)
 		resp2, err := srv.GetBotInfo(ctxWithBot2, req)
 		require.NoError(t, err)
 		botResp2, ok := resp2.(messagingapi.GetBotInfo200JSONResponse)

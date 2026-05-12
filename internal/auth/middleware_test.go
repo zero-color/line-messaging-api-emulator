@@ -130,7 +130,7 @@ func TestGetBotID(t *testing.T) {
 	t.Run("returns bot ID from context", func(t *testing.T) {
 		ctx := context.Background()
 		expectedID := int32(123)
-		ctx = auth.SetBotID(ctx, expectedID)
+		ctx = auth.SetBot(ctx, &db.Bot{ID: expectedID})
 
 		botID := auth.GetBotID(ctx)
 		assert.Equal(t, expectedID, botID)
@@ -138,7 +138,7 @@ func TestGetBotID(t *testing.T) {
 
 	t.Run("panics when bot ID not in context", func(t *testing.T) {
 		ctx := context.Background()
-		
+
 		assert.Panics(t, func() {
 			auth.GetBotID(ctx)
 		})

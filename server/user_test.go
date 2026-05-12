@@ -53,7 +53,7 @@ func TestGetProfile(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set bot ID in context (db is already in baseCtx)
-		ctx := auth.SetBotID(baseCtx, bot.ID)
+		ctx := auth.SetBot(baseCtx, &bot)
 
 		resp, err := srv.GetProfile(ctx, messagingapi.GetProfileRequestObject{
 			UserId: "test-user-id",
@@ -84,7 +84,7 @@ func TestGetProfile(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set the other bot ID in context (db is already in baseCtx)
-		ctx := auth.SetBotID(baseCtx, otherBot.ID)
+		ctx := auth.SetBot(baseCtx, &otherBot)
 
 		resp, err := srv.GetProfile(ctx, messagingapi.GetProfileRequestObject{
 			UserId: "test-user-id",
@@ -97,7 +97,7 @@ func TestGetProfile(t *testing.T) {
 
 	t.Run("error - user does not exist", func(t *testing.T) {
 		// Set bot ID in context (db is already in baseCtx)
-		ctx := auth.SetBotID(baseCtx, bot.ID)
+		ctx := auth.SetBot(baseCtx, &bot)
 
 		resp, err := srv.GetProfile(ctx, messagingapi.GetProfileRequestObject{
 			UserId: "non-existent-user",
@@ -124,7 +124,7 @@ func TestGetProfile(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set bot ID in context (db is already in baseCtx)
-		ctx := auth.SetBotID(baseCtx, bot.ID)
+		ctx := auth.SetBot(baseCtx, &bot)
 
 		resp, err := srv.GetProfile(ctx, messagingapi.GetProfileRequestObject{
 			UserId: "simple-user-id",
@@ -179,7 +179,7 @@ func TestGetFollowers(t *testing.T) {
 	}
 
 	// Set bot ID in context (db is already in baseCtx)
-	ctx := auth.SetBotID(baseCtx, bot.ID)
+	ctx := auth.SetBot(baseCtx, &bot)
 
 	t.Run("success - get all followers", func(t *testing.T) {
 		resp, err := srv.GetFollowers(ctx, messagingapi.GetFollowersRequestObject{})
@@ -272,7 +272,7 @@ func TestGetFollowers(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set the empty bot ID in context (db is already in baseCtx)
-		emptyCtx := auth.SetBotID(baseCtx, emptyBot.ID)
+		emptyCtx := auth.SetBot(baseCtx, &emptyBot)
 
 		resp, err := srv.GetFollowers(emptyCtx, messagingapi.GetFollowersRequestObject{})
 		require.NoError(t, err)
