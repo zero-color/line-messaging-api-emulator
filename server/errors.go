@@ -1,8 +1,30 @@
 package server
 
 import (
+	"net/http"
+
 	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
 )
+
+// APIError is an error reported to the client with its own HTTP status,
+// for cases the generated response types don't cover.
+type APIError struct {
+	StatusCode int
+	Message    string
+}
+
+// Error implements the error interface
+func (e *APIError) Error() string {
+	return e.Message
+}
+
+func newNotFoundError(message string) *APIError {
+	return &APIError{StatusCode: http.StatusNotFound, Message: message}
+}
+
+func newBadRequestError(message string) *APIError {
+	return &APIError{StatusCode: http.StatusBadRequest, Message: message}
+}
 
 // ValidationError represents a validation error with detailed information
 type ValidationError struct {

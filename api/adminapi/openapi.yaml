@@ -158,6 +158,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /admin/bots/{botId}/users/{userId}/rich-menu:
+    get:
+      summary: Get the rich menu a user sees
+      description: |
+        Returns the rich menu displayed to the user in the chat with the bot: the per-user
+        rich menu when one is linked, otherwise the bot's default rich menu.
+      operationId: getUserRichMenu
+      parameters:
+        - $ref: '#/components/parameters/BotId'
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: The rich menu the user sees
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRichMenuResponse'
+        '404':
+          description: Bot or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 components:
   parameters:
     BotId:
@@ -433,3 +462,23 @@ components:
           items:
             type: object
             additionalProperties: true
+    UserRichMenuResponse:
+      type: object
+      required:
+        - source
+      properties:
+        source:
+          type: string
+          description: |
+            Where the displayed rich menu comes from.
+            - `user`: A rich menu linked to the user
+            - `default`: The bot's default rich menu
+            - `none`: The user sees no rich menu
+          enum:
+            - user
+            - default
+            - none
+        richMenu:
+          type: object
+          description: Rich menu object exactly as the bot created it, with its richMenuId. Not included when source is `none`.
+          additionalProperties: true

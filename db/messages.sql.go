@@ -22,6 +22,35 @@ func (q *Queries) CountBotMessages(ctx context.Context, botID int32) (int64, err
 	return count, err
 }
 
+const countMessagesSentSince = `-- name: CountMessagesSentSince :one
+SELECT COALESCE(SUM(
+    jsonb_array_length(m.content) * CASE m.message_type
+        WHEN 'push' THEN 1
+        WHEN 'multicast' THEN cardinality(string_to_array(m.recipient_id, ','))
+        WHEN 'broadcast' THEN (SELECT COUNT(*) FROM bot_followers bf WHERE bf.bot_id = m.bot_id)
+        WHEN 'narrowcast' THEN (SELECT COUNT(*) FROM bot_followers bf WHERE bf.bot_id = m.bot_id)
+        ELSE 0
+    END
+), 0)::bigint AS total
+FROM messages m
+WHERE m.bot_id = $1 AND m.created_at >= $2
+`
+
+type CountMessagesSentSinceParams struct {
+	BotID int32              `db:"bot_id" json:"bot_id"`
+	Since pgtype.Timestamptz `db:"since" json:"since"`
+}
+
+// Number of messages counted towards the quota since the given time.
+// Each message object sent to each recipient counts as one; reply messages are free.
+// Broadcast and narrowcast messages are counted against the current number of followers.
+func (q *Queries) CountMessagesSentSince(ctx context.Context, arg CountMessagesSentSinceParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countMessagesSentSince, arg.BotID, arg.Since)
+	var total int64
+	err := row.Scan(&total)
+	return total, err
+}
+
 const createMessage = `-- name: CreateMessage :one
 INSERT INTO messages (
     bot_id, 

@@ -33,12 +33,18 @@ func RawBodyMiddleware() func(http.Handler) http.Handler {
 	}
 }
 
+// rawRequestBody returns the request body kept by RawBodyMiddleware
+func rawRequestBody(ctx context.Context) ([]byte, bool) {
+	body, ok := ctx.Value(rawBodyContextKey{}).([]byte)
+	return body, ok
+}
+
 // messagesJSON returns the request's message objects as JSON.
 // The generated messagingapi.Message keeps only the fields shared by every message type,
 // so the objects are taken from the raw body to preserve text, URLs, and other type-specific fields.
 // It falls back to the typed messages when the raw body isn't available.
 func messagesJSON(ctx context.Context, messages []messagingapi.Message) ([]byte, error) {
-	rawBody, ok := ctx.Value(rawBodyContextKey{}).([]byte)
+	rawBody, ok := rawRequestBody(ctx)
 	if !ok {
 		return json.Marshal(messages)
 	}

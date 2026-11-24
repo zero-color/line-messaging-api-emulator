@@ -12,15 +12,26 @@ import (
 
 type Querier interface {
 	CountBotMessages(ctx context.Context, botID int32) (int64, error)
+	// Number of messages counted towards the quota since the given time.
+	// Each message object sent to each recipient counts as one; reply messages are free.
+	// Broadcast and narrowcast messages are counted against the current number of followers.
+	CountMessagesSentSince(ctx context.Context, arg CountMessagesSentSinceParams) (int64, error)
 	CreateBot(ctx context.Context, arg CreateBotParams) (Bot, error)
 	CreateBotFollower(ctx context.Context, arg CreateBotFollowerParams) (BotFollower, error)
 	CreateBotFollowers(ctx context.Context, arg []CreateBotFollowersParams) (int64, error)
 	CreateMessage(ctx context.Context, arg CreateMessageParams) (Message, error)
 	CreateReplyTokens(ctx context.Context, arg []CreateReplyTokensParams) (int64, error)
+	CreateRichMenu(ctx context.Context, arg CreateRichMenuParams) (RichMenu, error)
+	// Affects no rows when the bot already has an alias with the ID.
+	CreateRichMenuAlias(ctx context.Context, arg CreateRichMenuAliasParams) (int64, error)
+	CreateRichMenuImage(ctx context.Context, arg CreateRichMenuImageParams) error
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	CreateUsers(ctx context.Context, arg []CreateUsersParams) (int64, error)
 	DeleteBot(ctx context.Context, userID string) error
 	DeleteBotFollower(ctx context.Context, arg DeleteBotFollowerParams) (int64, error)
+	DeleteDefaultRichMenu(ctx context.Context, botID int32) error
+	DeleteRichMenu(ctx context.Context, arg DeleteRichMenuParams) (int64, error)
+	DeleteRichMenuAlias(ctx context.Context, arg DeleteRichMenuAliasParams) (int64, error)
 	GetBot(ctx context.Context, id int32) (Bot, error)
 	GetBotByBasicID(ctx context.Context, basicID string) (Bot, error)
 	GetBotByUserID(ctx context.Context, userID string) (Bot, error)
@@ -29,20 +40,36 @@ type Querier interface {
 	GetBotFollowerUserIDs(ctx context.Context, arg GetBotFollowerUserIDsParams) ([]string, error)
 	GetBotFollowers(ctx context.Context, arg GetBotFollowersParams) ([]User, error)
 	GetBotMessages(ctx context.Context, arg GetBotMessagesParams) ([]Message, error)
+	GetDefaultRichMenu(ctx context.Context, botID int32) (RichMenu, error)
 	GetMessagesByRetryKey(ctx context.Context, retryKey pgtype.UUID) (Message, error)
 	GetReplyToken(ctx context.Context, arg GetReplyTokenParams) (ReplyToken, error)
+	GetRichMenu(ctx context.Context, arg GetRichMenuParams) (RichMenu, error)
+	GetRichMenuAlias(ctx context.Context, arg GetRichMenuAliasParams) (GetRichMenuAliasRow, error)
+	GetRichMenuImage(ctx context.Context, richMenuID int32) (RichMenuImage, error)
 	GetUser(ctx context.Context, userID string) (User, error)
 	GetUserByID(ctx context.Context, id int32) (User, error)
+	GetUserRichMenu(ctx context.Context, arg GetUserRichMenuParams) (RichMenu, error)
 	GetUsersByUserIDs(ctx context.Context, dollar_1 []string) ([]User, error)
 	GetWebhook(ctx context.Context, botID int32) (GetWebhookRow, error)
 	GetWebhookByBotID(ctx context.Context, botID int32) (GetWebhookByBotIDRow, error)
+	HasRichMenuImage(ctx context.Context, richMenuID int32) (bool, error)
 	IsBotFollower(ctx context.Context, arg IsBotFollowerParams) (bool, error)
+	// User IDs that don't exist are skipped.
+	LinkRichMenuToUsers(ctx context.Context, arg LinkRichMenuToUsersParams) error
 	ListBots(ctx context.Context) ([]Bot, error)
 	// Messages that the bot sent and the user received, oldest first.
 	// Broadcast and narrowcast messages count only while the user follows the bot.
 	ListMessagesDeliveredToUser(ctx context.Context, arg ListMessagesDeliveredToUserParams) ([]Message, error)
+	ListRichMenuAliases(ctx context.Context, botID int32) ([]ListRichMenuAliasesRow, error)
+	ListRichMenus(ctx context.Context, botID int32) ([]RichMenu, error)
+	MoveUsersOfRichMenu(ctx context.Context, arg MoveUsersOfRichMenuParams) error
+	UnlinkRichMenuFromAllUsers(ctx context.Context, botID int32) error
+	UnlinkRichMenuFromUsers(ctx context.Context, arg UnlinkRichMenuFromUsersParams) error
+	UnlinkUsersOfRichMenu(ctx context.Context, arg UnlinkUsersOfRichMenuParams) error
 	UpdateBot(ctx context.Context, arg UpdateBotParams) (Bot, error)
+	UpdateRichMenuAlias(ctx context.Context, arg UpdateRichMenuAliasParams) (int64, error)
 	UpsertBotFollower(ctx context.Context, arg UpsertBotFollowerParams) (int64, error)
+	UpsertDefaultRichMenu(ctx context.Context, arg UpsertDefaultRichMenuParams) error
 	UpsertWebhook(ctx context.Context, arg UpsertWebhookParams) error
 }
 
