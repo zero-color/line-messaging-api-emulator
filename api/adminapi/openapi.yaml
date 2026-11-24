@@ -87,7 +87,95 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /admin/bots/{botId}/users/{userId}/events:
+    post:
+      summary: Act as a user towards a bot
+      description: |
+        Performs an action as the user and delivers the resulting webhook event to the bot's
+        webhook endpoint, signed with the bot's channel secret. The state change is applied
+        even when the webhook can't be delivered.
+      operationId: sendUserEvent
+      parameters:
+        - $ref: '#/components/parameters/BotId'
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendUserEventRequest'
+      responses:
+        '200':
+          description: The action was applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendUserEventResponse'
+        '400':
+          description: Bad request - invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Bot or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /admin/bots/{botId}/users/{userId}/messages:
+    get:
+      summary: List messages a user received from a bot
+      description: |
+        Returns every send request whose recipients include the user, oldest first.
+        Broadcast and narrowcast messages are included only while the user follows the bot.
+      operationId: listUserMessages
+      parameters:
+        - $ref: '#/components/parameters/BotId'
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: Messages the user received
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListUserMessagesResponse'
+        '404':
+          description: Bot or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 components:
+  parameters:
+    BotId:
+      name: botId
+      in: path
+      required: true
+      description: Bot's user ID
+      schema:
+        type: string
+        example: "U1234567890abcdef"
+    UserId:
+      name: userId
+      in: path
+      required: true
+      description: User's user ID
+      schema:
+        type: string
+        example: "U4af4980629..."
   schemas:
     CreateBotRequest:
       type: object
@@ -245,3 +333,103 @@ components:
             code:
               type: string
               description: Error code
+    SendUserEventRequest:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          description: |
+            Action the user performs.
+            - `follow`: Adds the bot as a friend
+            - `unfollow`: Blocks the bot
+            - `message`: Sends a text message. The user must follow the bot.
+            - `postback`: Triggers a postback action. The user must follow the bot.
+          enum:
+            - follow
+            - unfollow
+            - message
+            - postback
+        message:
+          type: object
+          description: Required when type is `message`
+          required:
+            - text
+          properties:
+            text:
+              type: string
+              description: Text of the message
+              example: "Hello"
+        postback:
+          type: object
+          description: Required when type is `postback`
+          required:
+            - data
+          properties:
+            data:
+              type: string
+              description: Postback data of the action
+              example: "action=buy&itemid=111"
+            params:
+              type: object
+              description: Values selected in a datetime picker or rich menu switch action
+              additionalProperties:
+                type: string
+    SendUserEventResponse:
+      type: object
+      required:
+        - webhookEventId
+        - delivered
+      properties:
+        webhookEventId:
+          type: string
+          description: ID of the webhook event generated for the action
+        replyToken:
+          type: string
+          description: Reply token of the event. Not included for events that can't be replied to.
+        delivered:
+          type: boolean
+          description: Whether the bot's webhook endpoint accepted the event
+        detail:
+          type: string
+          description: Why the event wasn't delivered. Not included when delivered is true.
+    ListUserMessagesResponse:
+      type: object
+      required:
+        - messages
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReceivedMessage'
+    ReceivedMessage:
+      type: object
+      required:
+        - id
+        - sendType
+        - sentAt
+        - messages
+      properties:
+        id:
+          type: string
+          description: ID of the send request
+        sendType:
+          type: string
+          description: How the bot sent the messages
+          enum:
+            - push
+            - reply
+            - multicast
+            - narrowcast
+            - broadcast
+        sentAt:
+          type: string
+          format: date-time
+          description: When the bot sent the messages
+        messages:
+          type: array
+          description: Message objects exactly as the bot sent them
+          items:
+            type: object
+            additionalProperties: true

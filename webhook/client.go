@@ -7,8 +7,10 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,22 +19,34 @@ import (
 	"github.com/samber/lo"
 )
 
-// FollowEventRequest contains the data needed to send follow events
-type FollowEventRequest struct {
-	Endpoint  string
-	BotUserID string
-	Users     []FollowUser
+// Event is a webhook event object as defined by the Messaging API.
+// See: https://developers.line.biz/en/reference/messaging-api/#webhook-event-objects
+type Event map[string]any
+
+// ID returns the webhook event ID.
+func (e Event) ID() string {
+	id, _ := e["webhookEventId"].(string)
+	return id
 }
 
-// FollowUser represents a user who followed the bot
-type FollowUser struct {
-	UserID string
+// ReplyToken returns the reply token, or an empty string for events that can't be replied to.
+func (e Event) ReplyToken() string {
+	token, _ := e["replyToken"].(string)
+	return token
+}
+
+// SendEventsRequest contains the data needed to deliver webhook events
+type SendEventsRequest struct {
+	Endpoint  string
+	BotUserID string
+	Events    []Event
 }
 
 // Client is the interface for webhook operations
 type Client interface {
-	// SendFollowEvents sends follow events to the webhook endpoint
-	SendFollowEvents(ctx context.Context, req *FollowEventRequest) error
+	// SendEvents delivers the events to the webhook endpoint.
+	// It returns an error when the endpoint can't be reached or doesn't respond with a 2xx status.
+	SendEvents(ctx context.Context, req *SendEventsRequest) error
 }
 
 type client struct {
@@ -50,67 +64,98 @@ func NewClient() Client {
 	}
 }
 
-// SendFollowEvents sends follow events to the configured webhook endpoint
-func (c *client) SendFollowEvents(ctx context.Context, req *FollowEventRequest) error {
+// maxEventsPerRequest caps how many events are batched into a single webhook request.
+const maxEventsPerRequest = 50
+
+// SendEvents sends the events to the webhook endpoint in batches
+func (c *client) SendEvents(ctx context.Context, req *SendEventsRequest) error {
 	if req.Endpoint == "" {
-		return nil
-	}
-
-	events := make([]map[string]any, 0, len(req.Users))
-	now := time.Now()
-
-	for _, user := range req.Users {
-		events = append(events, buildFollowEvent(user.UserID, now))
+		return errors.New("webhook endpoint is not set")
 	}
 
 	var errs []error
-	for _, eventChunk := range lo.Chunk(events, 50) {
-		payload := map[string]any{
-			"destination": req.BotUserID,
-			"events":      eventChunk,
+	for _, eventChunk := range lo.Chunk(req.Events, maxEventsPerRequest) {
+		if err := c.post(ctx, req.Endpoint, req.BotUserID, eventChunk); err != nil {
+			errs = append(errs, err)
 		}
-
-		payloadBytes, err := json.Marshal(payload)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to marshal webhook payload: %w", err))
-			continue
-		}
-
-		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, req.Endpoint, bytes.NewBuffer(payloadBytes))
-		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to create webhook request: %w", err))
-			continue
-		}
-
-		httpReq.Header.Set("Content-Type", "application/json")
-		httpReq.Header.Set("X-Line-Signature", computeSignature(req.BotUserID, payloadBytes))
-		httpReq.Header.Set("User-Agent", "LineBotWebhook/2.0")
-
-		resp, err := c.httpClient.Do(httpReq)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to send webhook request: %w", err))
-			continue
-		}
-		func() {
-			defer resp.Body.Close()
-			if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-				errs = append(errs, fmt.Errorf("webhook request returned status code %d", resp.StatusCode))
-			}
-		}()
 	}
-	if len(errs) > 0 {
-		return fmt.Errorf("errors occurred while sending follow events: %v", errs)
+	return errors.Join(errs...)
+}
+
+func (c *client) post(ctx context.Context, endpoint string, botUserID string, events []Event) error {
+	payloadBytes, err := json.Marshal(map[string]any{
+		"destination": botUserID,
+		"events":      events,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to marshal webhook payload: %w", err)
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewBuffer(payloadBytes))
+	if err != nil {
+		return fmt.Errorf("failed to create webhook request: %w", err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("X-Line-Signature", computeSignature(botUserID, payloadBytes))
+	httpReq.Header.Set("User-Agent", "LineBotWebhook/2.0")
+
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return fmt.Errorf("failed to send webhook request: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("webhook request returned status code %d", resp.StatusCode)
 	}
 	return nil
 }
 
-// buildFollowEvent creates a follow event payload for a user
-func buildFollowEvent(userID string, timestamp time.Time) map[string]any {
-	return map[string]any{
-		"replyToken": strings.ReplaceAll(uuid.New().String(), "-", ""),
-		"type":       "follow",
-		"mode":       "active",
-		"timestamp":  timestamp.UnixMilli(),
+// NewFollowEvent creates the event sent when a user adds the bot as a friend
+func NewFollowEvent(userID string, timestamp time.Time) Event {
+	event := newUserEvent("follow", userID, timestamp)
+	event["replyToken"] = newReplyToken()
+	event["follow"] = map[string]any{"isUnblocked": false}
+	return event
+}
+
+// NewUnfollowEvent creates the event sent when a user blocks the bot.
+// Unfollow events have no reply token.
+func NewUnfollowEvent(userID string, timestamp time.Time) Event {
+	return newUserEvent("unfollow", userID, timestamp)
+}
+
+// NewTextMessageEvent creates the event sent when a user sends a text message to the bot
+func NewTextMessageEvent(userID string, text string, timestamp time.Time) Event {
+	messageID := strconv.FormatInt(timestamp.UnixNano(), 10)
+	event := newUserEvent("message", userID, timestamp)
+	event["replyToken"] = newReplyToken()
+	event["message"] = map[string]any{
+		"type":       "text",
+		"id":         messageID,
+		"quoteToken": newReplyToken(),
+		"text":       text,
+	}
+	return event
+}
+
+// NewPostbackEvent creates the event sent when a user triggers a postback action.
+// params is included only when it isn't empty, as for datetime picker and rich menu switch actions.
+func NewPostbackEvent(userID string, data string, params map[string]string, timestamp time.Time) Event {
+	postback := map[string]any{"data": data}
+	if len(params) > 0 {
+		postback["params"] = params
+	}
+	event := newUserEvent("postback", userID, timestamp)
+	event["replyToken"] = newReplyToken()
+	event["postback"] = postback
+	return event
+}
+
+func newUserEvent(eventType string, userID string, timestamp time.Time) Event {
+	return Event{
+		"type":      eventType,
+		"mode":      "active",
+		"timestamp": timestamp.UnixMilli(),
 		"source": map[string]any{
 			"type":   "user",
 			"userId": userID,
@@ -119,10 +164,11 @@ func buildFollowEvent(userID string, timestamp time.Time) map[string]any {
 		"deliveryContext": map[string]any{
 			"isRedelivery": false,
 		},
-		"follow": map[string]any{
-			"isUnblocked": false,
-		},
 	}
+}
+
+func newReplyToken() string {
+	return strings.ReplaceAll(uuid.New().String(), "-", "")
 }
 
 // computeSignature computes the X-Line-Signature header value.

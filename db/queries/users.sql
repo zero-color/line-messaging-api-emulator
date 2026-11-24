@@ -74,3 +74,15 @@ SELECT EXISTS (
     INNER JOIN users u ON u.id = bf.user_id
     WHERE bf.bot_id = $1 AND u.user_id = $2
 );
+
+-- name: UpsertBotFollower :execrows
+INSERT INTO bot_followers (
+    bot_id,
+    user_id
+) VALUES (
+    $1, $2
+) ON CONFLICT (bot_id, user_id) DO NOTHING;
+
+-- name: DeleteBotFollower :execrows
+DELETE FROM bot_followers
+WHERE bot_id = $1 AND user_id = $2;

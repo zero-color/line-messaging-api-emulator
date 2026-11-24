@@ -39,6 +39,13 @@ type Message struct {
 	CreatedAt     pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
 
+type ReplyToken struct {
+	Token     string             `db:"token" json:"token"`
+	BotID     int32              `db:"bot_id" json:"bot_id"`
+	UserID    int32              `db:"user_id" json:"user_id"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
 type User struct {
 	ID            int32              `db:"id" json:"id"`
 	UserID        string             `db:"user_id" json:"user_id"`

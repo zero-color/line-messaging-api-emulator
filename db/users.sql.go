@@ -90,6 +90,24 @@ type CreateUsersParams struct {
 	Language      *string `db:"language" json:"language"`
 }
 
+const deleteBotFollower = `-- name: DeleteBotFollower :execrows
+DELETE FROM bot_followers
+WHERE bot_id = $1 AND user_id = $2
+`
+
+type DeleteBotFollowerParams struct {
+	BotID  int32 `db:"bot_id" json:"bot_id"`
+	UserID int32 `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) DeleteBotFollower(ctx context.Context, arg DeleteBotFollowerParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteBotFollower, arg.BotID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const getBotFollowerCount = `-- name: GetBotFollowerCount :one
 SELECT COUNT(*) FROM bot_followers WHERE bot_id = $1
 `
@@ -297,4 +315,26 @@ func (q *Queries) IsBotFollower(ctx context.Context, arg IsBotFollowerParams) (b
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
+}
+
+const upsertBotFollower = `-- name: UpsertBotFollower :execrows
+INSERT INTO bot_followers (
+    bot_id,
+    user_id
+) VALUES (
+    $1, $2
+) ON CONFLICT (bot_id, user_id) DO NOTHING
+`
+
+type UpsertBotFollowerParams struct {
+	BotID  int32 `db:"bot_id" json:"bot_id"`
+	UserID int32 `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) UpsertBotFollower(ctx context.Context, arg UpsertBotFollowerParams) (int64, error) {
+	result, err := q.db.Exec(ctx, upsertBotFollower, arg.BotID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }

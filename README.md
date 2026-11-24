@@ -102,6 +102,21 @@ The emulator implements the following LINE Messaging API endpoints:
 
 For a complete list of endpoints, refer to the [OpenAPI specification](./line-openapi/messaging-api.yml).
 
+## Admin API
+
+The admin API sets up test data and plays the part of LINE users. It needs no authentication.
+See the [OpenAPI specification](./api/adminapi/openapi.yaml) for request and response details.
+
+- `POST /admin/bots` - Create a bot. Its `userId` is both the channel access token and the channel secret.
+- `POST /admin/bots/{botId}/followers` - Create dummy users that follow the bot
+- `POST /admin/bots/{botId}/users/{userId}/events` - Act as a user: `follow`, `unfollow`, `message` (text) or `postback`.
+  The matching webhook event is sent to the bot's webhook endpoint with a valid `X-Line-Signature`,
+  and the response reports whether the endpoint accepted it.
+- `GET /admin/bots/{botId}/users/{userId}/messages` - List what the bot sent to a user by push, reply,
+  multicast, narrowcast or broadcast, with the message objects exactly as the bot sent them
+
+Reply tokens are issued by webhook events, and a reply with a token the emulator didn't issue is rejected.
+
 ## Development
 
 ### Project Structure

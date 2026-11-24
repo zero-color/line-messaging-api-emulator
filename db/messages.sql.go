@@ -129,3 +129,59 @@ func (q *Queries) GetMessagesByRetryKey(ctx context.Context, retryKey pgtype.UUI
 	)
 	return i, err
 }
+
+const listMessagesDeliveredToUser = `-- name: ListMessagesDeliveredToUser :many
+SELECT m.id, m.bot_id, m.message_type, m.recipient_type, m.recipient_id, m.content, m.retry_key, m.created_at FROM messages m
+WHERE m.bot_id = $1
+  AND (
+    (m.message_type = 'push' AND m.recipient_id = $2::text)
+    OR (m.message_type = 'multicast' AND $2::text = ANY(string_to_array(m.recipient_id, ',')))
+    OR (m.message_type = 'reply' AND EXISTS (
+        SELECT 1 FROM reply_tokens rt
+        INNER JOIN users u ON u.id = rt.user_id
+        WHERE rt.bot_id = m.bot_id AND rt.token = m.recipient_id AND u.user_id = $2::text
+    ))
+    OR (m.message_type IN ('broadcast', 'narrowcast') AND EXISTS (
+        SELECT 1 FROM bot_followers bf
+        INNER JOIN users u ON u.id = bf.user_id
+        WHERE bf.bot_id = m.bot_id AND u.user_id = $2::text
+    ))
+  )
+ORDER BY m.created_at, m.id
+`
+
+type ListMessagesDeliveredToUserParams struct {
+	BotID      int32  `db:"bot_id" json:"bot_id"`
+	LineUserID string `db:"line_user_id" json:"line_user_id"`
+}
+
+// Messages that the bot sent and the user received, oldest first.
+// Broadcast and narrowcast messages count only while the user follows the bot.
+func (q *Queries) ListMessagesDeliveredToUser(ctx context.Context, arg ListMessagesDeliveredToUserParams) ([]Message, error) {
+	rows, err := q.db.Query(ctx, listMessagesDeliveredToUser, arg.BotID, arg.LineUserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Message{}
+	for rows.Next() {
+		var i Message
+		if err := rows.Scan(
+			&i.ID,
+			&i.BotID,
+			&i.MessageType,
+			&i.RecipientType,
+			&i.RecipientID,
+			&i.Content,
+			&i.RetryKey,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
