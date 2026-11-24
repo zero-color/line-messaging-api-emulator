@@ -132,7 +132,6 @@ func TestCreateFollowers(t *testing.T) {
 		assert.Equal(t, 5, successResp.Count)
 		assert.Len(t, successResp.Followers, 5)
 
-		// Verify all followers have required fields
 		for _, follower := range successResp.Followers {
 			assert.NotEmpty(t, follower.UserId)
 			assert.NotEmpty(t, follower.DisplayName)

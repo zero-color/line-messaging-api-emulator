@@ -42,6 +42,40 @@ func (q *Queries) CreateBotFollowers(ctx context.Context, arg []CreateBotFollowe
 	return q.db.CopyFrom(ctx, []string{"bot_followers"}, []string{"bot_id", "user_id"}, &iteratorForCreateBotFollowers{rows: arg})
 }
 
+// iteratorForCreateReplyTokens implements pgx.CopyFromSource.
+type iteratorForCreateReplyTokens struct {
+	rows                 []CreateReplyTokensParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForCreateReplyTokens) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForCreateReplyTokens) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].Token,
+		r.rows[0].BotID,
+		r.rows[0].UserID,
+	}, nil
+}
+
+func (r iteratorForCreateReplyTokens) Err() error {
+	return nil
+}
+
+func (q *Queries) CreateReplyTokens(ctx context.Context, arg []CreateReplyTokensParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"reply_tokens"}, []string{"token", "bot_id", "user_id"}, &iteratorForCreateReplyTokens{rows: arg})
+}
+
 // iteratorForCreateUsers implements pgx.CopyFromSource.
 type iteratorForCreateUsers struct {
 	rows                 []CreateUsersParams

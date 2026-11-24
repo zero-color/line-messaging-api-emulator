@@ -76,3 +76,13 @@ CREATE TABLE IF NOT EXISTS messages (
 CREATE INDEX idx_messages_bot_id ON messages(bot_id);
 CREATE INDEX idx_messages_retry_key ON messages(retry_key) WHERE retry_key IS NOT NULL;
 CREATE INDEX idx_messages_created_at ON messages(created_at);
+
+-- Create reply_tokens table to resolve the user a reply message is addressed to
+CREATE TABLE IF NOT EXISTS reply_tokens (
+    token VARCHAR(64) PRIMARY KEY,
+    bot_id INTEGER NOT NULL REFERENCES bots(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_reply_tokens_bot_id_user_id ON reply_tokens(bot_id, user_id);

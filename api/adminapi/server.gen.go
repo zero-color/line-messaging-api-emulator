@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/oapi-codegen/runtime"
@@ -36,6 +37,23 @@ const (
 const (
 	CreateBotRequestMarkAsReadModeAuto   CreateBotRequestMarkAsReadMode = "auto"
 	CreateBotRequestMarkAsReadModeManual CreateBotRequestMarkAsReadMode = "manual"
+)
+
+// Defines values for ReceivedMessageSendType.
+const (
+	Broadcast  ReceivedMessageSendType = "broadcast"
+	Multicast  ReceivedMessageSendType = "multicast"
+	Narrowcast ReceivedMessageSendType = "narrowcast"
+	Push       ReceivedMessageSendType = "push"
+	Reply      ReceivedMessageSendType = "reply"
+)
+
+// Defines values for SendUserEventRequestType.
+const (
+	Follow   SendUserEventRequestType = "follow"
+	Message  SendUserEventRequestType = "message"
+	Postback SendUserEventRequestType = "postback"
+	Unfollow SendUserEventRequestType = "unfollow"
 )
 
 // BotInfoResponse defines model for BotInfoResponse.
@@ -158,11 +176,90 @@ type FollowerProfile struct {
 	UserId string `json:"userId"`
 }
 
+// ListUserMessagesResponse defines model for ListUserMessagesResponse.
+type ListUserMessagesResponse struct {
+	Messages []ReceivedMessage `json:"messages"`
+}
+
+// ReceivedMessage defines model for ReceivedMessage.
+type ReceivedMessage struct {
+	// Id ID of the send request
+	Id string `json:"id"`
+
+	// Messages Message objects exactly as the bot sent them
+	Messages []map[string]interface{} `json:"messages"`
+
+	// SendType How the bot sent the messages
+	SendType ReceivedMessageSendType `json:"sendType"`
+
+	// SentAt When the bot sent the messages
+	SentAt time.Time `json:"sentAt"`
+}
+
+// ReceivedMessageSendType How the bot sent the messages
+type ReceivedMessageSendType string
+
+// SendUserEventRequest defines model for SendUserEventRequest.
+type SendUserEventRequest struct {
+	// Message Required when type is `message`
+	Message *struct {
+		// Text Text of the message
+		Text string `json:"text"`
+	} `json:"message,omitempty"`
+
+	// Postback Required when type is `postback`
+	Postback *struct {
+		// Data Postback data of the action
+		Data string `json:"data"`
+
+		// Params Values selected in a datetime picker or rich menu switch action
+		Params *map[string]string `json:"params,omitempty"`
+	} `json:"postback,omitempty"`
+
+	// Type Action the user performs.
+	// - `follow`: Adds the bot as a friend
+	// - `unfollow`: Blocks the bot
+	// - `message`: Sends a text message. The user must follow the bot.
+	// - `postback`: Triggers a postback action. The user must follow the bot.
+	Type SendUserEventRequestType `json:"type"`
+}
+
+// SendUserEventRequestType Action the user performs.
+// - `follow`: Adds the bot as a friend
+// - `unfollow`: Blocks the bot
+// - `message`: Sends a text message. The user must follow the bot.
+// - `postback`: Triggers a postback action. The user must follow the bot.
+type SendUserEventRequestType string
+
+// SendUserEventResponse defines model for SendUserEventResponse.
+type SendUserEventResponse struct {
+	// Delivered Whether the bot's webhook endpoint accepted the event
+	Delivered bool `json:"delivered"`
+
+	// Detail Why the event wasn't delivered. Not included when delivered is true.
+	Detail *string `json:"detail,omitempty"`
+
+	// ReplyToken Reply token of the event. Not included for events that can't be replied to.
+	ReplyToken *string `json:"replyToken,omitempty"`
+
+	// WebhookEventId ID of the webhook event generated for the action
+	WebhookEventId string `json:"webhookEventId"`
+}
+
+// BotId defines model for BotId.
+type BotId = string
+
+// UserId defines model for UserId.
+type UserId = string
+
 // CreateBotJSONRequestBody defines body for CreateBot for application/json ContentType.
 type CreateBotJSONRequestBody = CreateBotRequest
 
 // CreateFollowersJSONRequestBody defines body for CreateFollowers for application/json ContentType.
 type CreateFollowersJSONRequestBody = CreateFollowersRequest
+
+// SendUserEventJSONRequestBody defines body for SendUserEvent for application/json ContentType.
+type SendUserEventJSONRequestBody = SendUserEventRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -172,6 +269,12 @@ type ServerInterface interface {
 	// Create dummy followers for a bot
 	// (POST /admin/bots/{botId}/followers)
 	CreateFollowers(w http.ResponseWriter, r *http.Request, botId string)
+	// Act as a user towards a bot
+	// (POST /admin/bots/{botId}/users/{userId}/events)
+	SendUserEvent(w http.ResponseWriter, r *http.Request, botId BotId, userId UserId)
+	// List messages a user received from a bot
+	// (GET /admin/bots/{botId}/users/{userId}/messages)
+	ListUserMessages(w http.ResponseWriter, r *http.Request, botId BotId, userId UserId)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -187,6 +290,18 @@ func (_ Unimplemented) CreateBot(w http.ResponseWriter, r *http.Request) {
 // Create dummy followers for a bot
 // (POST /admin/bots/{botId}/followers)
 func (_ Unimplemented) CreateFollowers(w http.ResponseWriter, r *http.Request, botId string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Act as a user towards a bot
+// (POST /admin/bots/{botId}/users/{userId}/events)
+func (_ Unimplemented) SendUserEvent(w http.ResponseWriter, r *http.Request, botId BotId, userId UserId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List messages a user received from a bot
+// (GET /admin/bots/{botId}/users/{userId}/messages)
+func (_ Unimplemented) ListUserMessages(w http.ResponseWriter, r *http.Request, botId BotId, userId UserId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -229,6 +344,74 @@ func (siw *ServerInterfaceWrapper) CreateFollowers(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateFollowers(w, r, botId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SendUserEvent operation middleware
+func (siw *ServerInterfaceWrapper) SendUserEvent(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "botId" -------------
+	var botId BotId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "botId", chi.URLParam(r, "botId"), &botId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "botId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "userId" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", chi.URLParam(r, "userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SendUserEvent(w, r, botId, userId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListUserMessages operation middleware
+func (siw *ServerInterfaceWrapper) ListUserMessages(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "botId" -------------
+	var botId BotId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "botId", chi.URLParam(r, "botId"), &botId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "botId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "userId" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", chi.URLParam(r, "userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListUserMessages(w, r, botId, userId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -357,6 +540,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/admin/bots/{botId}/followers", wrapper.CreateFollowers)
 	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/admin/bots/{botId}/users/{userId}/events", wrapper.SendUserEvent)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/admin/bots/{botId}/users/{userId}/messages", wrapper.ListUserMessages)
+	})
 
 	return r
 }
@@ -450,6 +639,88 @@ func (response CreateFollowers500JSONResponse) VisitCreateFollowersResponse(w ht
 	return json.NewEncoder(w).Encode(response)
 }
 
+type SendUserEventRequestObject struct {
+	BotId  BotId  `json:"botId"`
+	UserId UserId `json:"userId"`
+	Body   *SendUserEventJSONRequestBody
+}
+
+type SendUserEventResponseObject interface {
+	VisitSendUserEventResponse(w http.ResponseWriter) error
+}
+
+type SendUserEvent200JSONResponse SendUserEventResponse
+
+func (response SendUserEvent200JSONResponse) VisitSendUserEventResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SendUserEvent400JSONResponse ErrorResponse
+
+func (response SendUserEvent400JSONResponse) VisitSendUserEventResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SendUserEvent404JSONResponse ErrorResponse
+
+func (response SendUserEvent404JSONResponse) VisitSendUserEventResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SendUserEvent500JSONResponse ErrorResponse
+
+func (response SendUserEvent500JSONResponse) VisitSendUserEventResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListUserMessagesRequestObject struct {
+	BotId  BotId  `json:"botId"`
+	UserId UserId `json:"userId"`
+}
+
+type ListUserMessagesResponseObject interface {
+	VisitListUserMessagesResponse(w http.ResponseWriter) error
+}
+
+type ListUserMessages200JSONResponse ListUserMessagesResponse
+
+func (response ListUserMessages200JSONResponse) VisitListUserMessagesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListUserMessages404JSONResponse ErrorResponse
+
+func (response ListUserMessages404JSONResponse) VisitListUserMessagesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListUserMessages500JSONResponse ErrorResponse
+
+func (response ListUserMessages500JSONResponse) VisitListUserMessagesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// Create a new bot
@@ -458,6 +729,12 @@ type StrictServerInterface interface {
 	// Create dummy followers for a bot
 	// (POST /admin/bots/{botId}/followers)
 	CreateFollowers(ctx context.Context, request CreateFollowersRequestObject) (CreateFollowersResponseObject, error)
+	// Act as a user towards a bot
+	// (POST /admin/bots/{botId}/users/{userId}/events)
+	SendUserEvent(ctx context.Context, request SendUserEventRequestObject) (SendUserEventResponseObject, error)
+	// List messages a user received from a bot
+	// (GET /admin/bots/{botId}/users/{userId}/messages)
+	ListUserMessages(ctx context.Context, request ListUserMessagesRequestObject) (ListUserMessagesResponseObject, error)
 }
 
 type StrictHandlerFunc = strictnethttp.StrictHTTPHandlerFunc
@@ -546,6 +823,67 @@ func (sh *strictHandler) CreateFollowers(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateFollowersResponseObject); ok {
 		if err := validResponse.VisitCreateFollowersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SendUserEvent operation middleware
+func (sh *strictHandler) SendUserEvent(w http.ResponseWriter, r *http.Request, botId BotId, userId UserId) {
+	var request SendUserEventRequestObject
+
+	request.BotId = botId
+	request.UserId = userId
+
+	var body SendUserEventJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SendUserEvent(ctx, request.(SendUserEventRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SendUserEvent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SendUserEventResponseObject); ok {
+		if err := validResponse.VisitSendUserEventResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListUserMessages operation middleware
+func (sh *strictHandler) ListUserMessages(w http.ResponseWriter, r *http.Request, botId BotId, userId UserId) {
+	var request ListUserMessagesRequestObject
+
+	request.BotId = botId
+	request.UserId = userId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListUserMessages(ctx, request.(ListUserMessagesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListUserMessages")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListUserMessagesResponseObject); ok {
+		if err := validResponse.VisitListUserMessagesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

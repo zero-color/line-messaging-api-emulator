@@ -3,9 +3,11 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/samber/lo"
 	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
@@ -68,7 +70,7 @@ func (s *server) Broadcast(ctx context.Context, request messagingapi.BroadcastRe
 	}
 
 	// Serialize messages to JSON
-	messagesJSON, err := json.Marshal(request.Body.Messages)
+	messagesJSON, err := messagesJSON(ctx, request.Body.Messages)
 	if err != nil {
 		return nil, fmt.Errorf("failed to serialize messages: %w", err)
 	}
@@ -128,7 +130,7 @@ func (s *server) Multicast(ctx context.Context, request messagingapi.MulticastRe
 	}
 
 	// Serialize messages to JSON
-	messagesJSON, err := json.Marshal(request.Body.Messages)
+	messagesJSON, err := messagesJSON(ctx, request.Body.Messages)
 	if err != nil {
 		return nil, fmt.Errorf("failed to serialize messages: %w", err)
 	}
@@ -176,7 +178,7 @@ func (s *server) Narrowcast(ctx context.Context, request messagingapi.Narrowcast
 	}
 
 	// Serialize messages to JSON
-	messagesJSON, err := json.Marshal(request.Body.Messages)
+	messagesJSON, err := messagesJSON(ctx, request.Body.Messages)
 	if err != nil {
 		return nil, fmt.Errorf("failed to serialize messages: %w", err)
 	}
@@ -245,7 +247,7 @@ func (s *server) PushMessage(ctx context.Context, request messagingapi.PushMessa
 	}
 
 	// Serialize messages to JSON
-	messagesJSON, err := json.Marshal(request.Body.Messages)
+	messagesJSON, err := messagesJSON(ctx, request.Body.Messages)
 	if err != nil {
 		return nil, fmt.Errorf("failed to serialize messages: %w", err)
 	}
@@ -298,6 +300,16 @@ func (s *server) ReplyMessage(ctx context.Context, request messagingapi.ReplyMes
 
 	botID := auth.GetBotID(ctx)
 
+	if _, err := db.FromContext(ctx).Queries().GetReplyToken(ctx, db.GetReplyTokenParams{
+		BotID: botID,
+		Token: request.Body.ReplyToken,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, NewValidationError("Invalid reply token")
+		}
+		return nil, fmt.Errorf("failed to get reply token: %w", err)
+	}
+
 	// We store the reply token as a UUID in the RetryKey column for uniqueness checking
 	parsedUUID := uuid.NewMD5(xuuid.NameSpaceReplyToken, []byte(request.Body.ReplyToken))
 	replyTokenUUID := pgtype.UUID{
@@ -314,7 +326,7 @@ func (s *server) ReplyMessage(ctx context.Context, request messagingapi.ReplyMes
 	}
 
 	// Serialize messages to JSON
-	messagesJSON, err := json.Marshal(request.Body.Messages)
+	messagesJSON, err := messagesJSON(ctx, request.Body.Messages)
 	if err != nil {
 		return nil, fmt.Errorf("failed to serialize messages: %w", err)
 	}

@@ -13,6 +13,9 @@ import (
 type botIdContextKey struct {
 }
 
+// Middleware is an HTTP middleware that authenticates requests using Bearer tokens
+// The token is expected to be the bot's UserID in the Authorization header
+// e.g. "Authorization: Bearer {botUserID}"
 func Middleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -40,18 +43,22 @@ func Middleware() func(http.Handler) http.Handler {
 				return
 			}
 
-			ctx := SetBotID(r.Context(), bot.ID)
+			ctx := SetBot(r.Context(), &bot)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
-// SetBotID sets the bot ID in the context
+// SetBot sets the bot in the context
 // It shouldn't be used outside of this package except for testing
-func SetBotID(ctx context.Context, botID int32) context.Context {
-	return context.WithValue(ctx, botIdContextKey{}, botID)
+func SetBot(ctx context.Context, bot *db.Bot) context.Context {
+	return context.WithValue(ctx, botIdContextKey{}, bot)
+}
+
+func GetBot(ctx context.Context) *db.Bot {
+	return ctx.Value(botIdContextKey{}).(*db.Bot)
 }
 
 func GetBotID(ctx context.Context) int32 {
-	return ctx.Value(botIdContextKey{}).(int32)
+	return GetBot(ctx).ID
 }

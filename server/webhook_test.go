@@ -39,7 +39,7 @@ func TestGetWebhookEndpoint(t *testing.T) {
 		require.NoError(t, err)
 
 		// Add bot ID to context (db is already in ctx)
-		botCtx := auth.SetBotID(ctx, bot.ID)
+		botCtx := auth.SetBot(ctx, &bot)
 
 		// Set a webhook endpoint
 		endpoint := "https://example.com/webhook"
@@ -79,7 +79,7 @@ func TestGetWebhookEndpoint(t *testing.T) {
 		require.NoError(t, err)
 
 		// Add bot ID to context (db is already in ctx)
-		botCtx := auth.SetBotID(ctx, bot.ID)
+		botCtx := auth.SetBot(ctx, &bot)
 
 		// Get the webhook endpoint (should be empty)
 		getReq := messagingapi.GetWebhookEndpointRequestObject{}
@@ -94,7 +94,7 @@ func TestGetWebhookEndpoint(t *testing.T) {
 
 	t.Run("returns error when bot does not exist", func(t *testing.T) {
 		// Use a non-existent bot ID
-		botCtx := auth.SetBotID(ctx, 99999)
+		botCtx := auth.SetBot(ctx, &db.Bot{ID: 9999})
 
 		getReq := messagingapi.GetWebhookEndpointRequestObject{}
 		resp, err := srv.GetWebhookEndpoint(botCtx, getReq)
@@ -127,7 +127,7 @@ func TestSetWebhookEndpoint(t *testing.T) {
 	// Get the bot from database to get its ID
 	bot, err := dbClient.Queries().GetBotByUserID(ctx, createdBot.UserId)
 	require.NoError(t, err)
-	botCtx := auth.SetBotID(ctx, bot.ID)
+	botCtx := auth.SetBot(ctx, &bot)
 
 	t.Run("successfully sets webhook endpoint", func(t *testing.T) {
 		endpoint := "https://example.com/webhook"
@@ -249,7 +249,7 @@ func TestTestWebhookEndpoint(t *testing.T) {
 	// Get the bot from database to get its ID
 	bot, err := dbClient.Queries().GetBotByUserID(ctx, createdBot.UserId)
 	require.NoError(t, err)
-	botCtx := auth.SetBotID(ctx, bot.ID)
+	botCtx := auth.SetBot(ctx, &bot)
 
 	t.Run("successfully tests configured webhook endpoint", func(t *testing.T) {
 		// Create a test server
@@ -349,7 +349,7 @@ func TestTestWebhookEndpoint(t *testing.T) {
 		// Get the bot from database to get its ID
 		bot, err := dbClient.Queries().GetBotByUserID(ctx, createdBot.UserId)
 		require.NoError(t, err)
-		newBotCtx := auth.SetBotID(ctx, bot.ID)
+		newBotCtx := auth.SetBot(ctx, &bot)
 
 		testReq := messagingapi.TestWebhookEndpointRequestObject{}
 		resp, err := srv.TestWebhookEndpoint(newBotCtx, testReq)

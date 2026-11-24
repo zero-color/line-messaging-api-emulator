@@ -16,9 +16,11 @@ type Querier interface {
 	CreateBotFollower(ctx context.Context, arg CreateBotFollowerParams) (BotFollower, error)
 	CreateBotFollowers(ctx context.Context, arg []CreateBotFollowersParams) (int64, error)
 	CreateMessage(ctx context.Context, arg CreateMessageParams) (Message, error)
+	CreateReplyTokens(ctx context.Context, arg []CreateReplyTokensParams) (int64, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	CreateUsers(ctx context.Context, arg []CreateUsersParams) (int64, error)
 	DeleteBot(ctx context.Context, userID string) error
+	DeleteBotFollower(ctx context.Context, arg DeleteBotFollowerParams) (int64, error)
 	GetBot(ctx context.Context, id int32) (Bot, error)
 	GetBotByBasicID(ctx context.Context, basicID string) (Bot, error)
 	GetBotByUserID(ctx context.Context, userID string) (Bot, error)
@@ -28,6 +30,7 @@ type Querier interface {
 	GetBotFollowers(ctx context.Context, arg GetBotFollowersParams) ([]User, error)
 	GetBotMessages(ctx context.Context, arg GetBotMessagesParams) ([]Message, error)
 	GetMessagesByRetryKey(ctx context.Context, retryKey pgtype.UUID) (Message, error)
+	GetReplyToken(ctx context.Context, arg GetReplyTokenParams) (ReplyToken, error)
 	GetUser(ctx context.Context, userID string) (User, error)
 	GetUserByID(ctx context.Context, id int32) (User, error)
 	GetUsersByUserIDs(ctx context.Context, dollar_1 []string) ([]User, error)
@@ -35,7 +38,11 @@ type Querier interface {
 	GetWebhookByBotID(ctx context.Context, botID int32) (GetWebhookByBotIDRow, error)
 	IsBotFollower(ctx context.Context, arg IsBotFollowerParams) (bool, error)
 	ListBots(ctx context.Context) ([]Bot, error)
+	// Messages that the bot sent and the user received, oldest first.
+	// Broadcast and narrowcast messages count only while the user follows the bot.
+	ListMessagesDeliveredToUser(ctx context.Context, arg ListMessagesDeliveredToUserParams) ([]Message, error)
 	UpdateBot(ctx context.Context, arg UpdateBotParams) (Bot, error)
+	UpsertBotFollower(ctx context.Context, arg UpsertBotFollowerParams) (int64, error)
 	UpsertWebhook(ctx context.Context, arg UpsertWebhookParams) error
 }
 

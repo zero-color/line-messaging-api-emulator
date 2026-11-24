@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
@@ -14,6 +15,7 @@ import (
 	"github.com/zero-color/line-messaging-api-emulator/db"
 	"github.com/zero-color/line-messaging-api-emulator/pkg/pgutil"
 	"github.com/zero-color/line-messaging-api-emulator/pkg/shortid"
+	"github.com/zero-color/line-messaging-api-emulator/webhook"
 )
 
 // CreateBot creates a new bot
@@ -181,6 +183,8 @@ func (s *server) CreateFollowers(ctx context.Context, request adminapi.CreateFol
 		}, nil
 	}
 
+	s.sendFollowEventsToWebhook(ctx, bot, createdUsers)
+
 	// Build response
 	followers := s.buildFollowerProfiles(createdUsers)
 
@@ -340,4 +344,38 @@ func (s *server) buildFollowerProfiles(users []db.User) []adminapi.FollowerProfi
 	}
 
 	return followers
+}
+
+// sendFollowEventsToWebhook notifies the bot's webhook endpoint of the new followers without waiting for the response.
+// Nothing is sent when the bot has no active webhook endpoint.
+func (s *server) sendFollowEventsToWebhook(ctx context.Context, bot db.Bot, users []db.User) {
+	webhookConfig, err := db.FromContext(ctx).Queries().GetWebhookByBotID(ctx, bot.ID)
+	if err != nil {
+		return
+	}
+	if !webhookConfig.Active || webhookConfig.Endpoint == "" {
+		return
+	}
+
+	now := time.Now()
+	events := make([]webhook.Event, 0, len(users))
+	eventsByUserID := make(map[int32]webhook.Event, len(users))
+	for _, user := range users {
+		event := webhook.NewFollowEvent(user.UserID, now)
+		events = append(events, event)
+		eventsByUserID[user.ID] = event
+	}
+	if err := storeReplyTokens(ctx, bot.ID, eventsByUserID); err != nil {
+		return
+	}
+
+	req := &webhook.SendEventsRequest{
+		Endpoint:  webhookConfig.Endpoint,
+		BotUserID: bot.UserID,
+		Events:    events,
+	}
+	// The request context is canceled once the handler returns, so the send gets its own.
+	go func() {
+		_ = s.webhookClient.SendEvents(context.Background(), req)
+	}()
 }

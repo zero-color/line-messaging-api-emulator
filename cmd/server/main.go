@@ -1,19 +1,14 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/jessevdk/go-flags"
-	"github.com/zero-color/line-messaging-api-emulator/api/adminapi"
-	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
 	"github.com/zero-color/line-messaging-api-emulator/db"
-	"github.com/zero-color/line-messaging-api-emulator/internal/auth"
 	"github.com/zero-color/line-messaging-api-emulator/server"
 	"github.com/zero-color/line-messaging-api-emulator/webhook"
 )
@@ -54,39 +49,7 @@ func realMain() error {
 
 	dbClient := db.NewClient(sqlDB)
 	webhookClient := webhook.NewClient()
-	s := server.New(webhookClient)
-	r := chi.NewRouter()
-	r.Use(db.HTTPMiddleware(dbClient))
-
-	// Admin API routes (no auth required)
-	adminHandler := adminapi.NewStrictHandler(s, nil)
-	adminapi.HandlerFromMux(adminHandler, r)
-
-	// Messaging API routes with auth middleware
-	r.Group(func(r chi.Router) {
-		r.Use(auth.Middleware())
-
-		// Custom error handler for validation errors
-		errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
-			var validationErr *server.ValidationError
-			if errors.As(err, &validationErr) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusBadRequest)
-				json.NewEncoder(w).Encode(validationErr.ToErrorResponse())
-				return
-			}
-			// Default error handling
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-
-		messagingHandler := messagingapi.NewStrictHandlerWithOptions(s, nil, messagingapi.StrictHTTPServerOptions{
-			ResponseErrorHandlerFunc: errorHandler,
-			RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-			},
-		})
-		messagingapi.HandlerFromMux(messagingHandler, r)
-	})
+	r := server.NewRouter(dbClient, server.New(webhookClient))
 
 	logger.Info("Starting server", slog.Int("port", int(opts.Port)))
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", opts.Port), r); err != nil {
