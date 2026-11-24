@@ -10,12 +10,16 @@ import (
 
 func ConnectDB(dataSourceName string) (*pgxpool.Pool, error) {
 	ctx := context.Background()
-	
+
 	config, err := pgxpool.ParseConfig(dataSourceName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config: %w", err)
 	}
 
+	return newPool(ctx, config)
+}
+
+func newPool(ctx context.Context, config *pgxpool.Config) (*pgxpool.Pool, error) {
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pool: %w", err)
@@ -31,7 +35,7 @@ func ConnectDB(dataSourceName string) (*pgxpool.Pool, error) {
 // ConnectDBForMigration returns a pgx connection for migrations
 func ConnectDBForMigration(dataSourceName string) (*pgx.Conn, error) {
 	ctx := context.Background()
-	
+
 	conn, err := pgx.Connect(ctx, dataSourceName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)

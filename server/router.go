@@ -7,13 +7,14 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/zero-color/line-messaging-api-emulator/api/adminapi"
+	"github.com/zero-color/line-messaging-api-emulator/api/insightapi"
 	"github.com/zero-color/line-messaging-api-emulator/api/messagingapi"
 	"github.com/zero-color/line-messaging-api-emulator/db"
 	"github.com/zero-color/line-messaging-api-emulator/internal/auth"
 )
 
 // NewRouter builds the HTTP handler that serves the admin API without authentication
-// and the Messaging API behind channel access token authentication.
+// and the Messaging API and insight API behind channel access token authentication.
 func NewRouter(dbClient db.DB, s Server) http.Handler {
 	r := chi.NewRouter()
 	r.Use(db.HTTPMiddleware(dbClient))
@@ -35,6 +36,13 @@ func NewRouter(dbClient db.DB, s Server) http.Handler {
 					_ = json.NewEncoder(w).Encode(validationErr.ToErrorResponse())
 					return
 				}
+				var apiErr *APIError
+				if errors.As(err, &apiErr) {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(apiErr.StatusCode)
+					_ = json.NewEncoder(w).Encode(messagingapi.ErrorResponse{Message: apiErr.Message})
+					return
+				}
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			},
 			RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
@@ -42,6 +50,16 @@ func NewRouter(dbClient db.DB, s Server) http.Handler {
 			},
 		})
 		messagingapi.HandlerFromMux(messagingHandler, r)
+
+		insightHandler := insightapi.NewStrictHandlerWithOptions(s, nil, insightapi.StrictHTTPServerOptions{
+			ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			},
+			RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+			},
+		})
+		insightapi.HandlerFromMux(insightHandler, r)
 	})
 	return r
 }

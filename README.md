@@ -95,10 +95,28 @@ The emulator implements the following LINE Messaging API endpoints:
 - `POST /v2/bot/room/{roomId}/leave` - Leave room
 
 ### Rich Menu
-- `POST /v2/bot/richmenu` - Create rich menu
-- `GET /v2/bot/richmenu/{richMenuId}` - Get rich menu
-- `DELETE /v2/bot/richmenu/{richMenuId}` - Delete rich menu
-- `GET /v2/bot/richmenu/list` - Get rich menu list
+- `POST /v2/bot/richmenu` / `POST /v2/bot/richmenu/validate` - Create or validate a rich menu
+- `GET /v2/bot/richmenu/{richMenuId}` / `GET /v2/bot/richmenu/list` - Get rich menus
+- `DELETE /v2/bot/richmenu/{richMenuId}` - Delete a rich menu
+- `POST` / `GET /v2/bot/richmenu/{richMenuId}/content` - Upload or download the rich menu image
+- `POST` / `DELETE /v2/bot/user/all/richmenu[/{richMenuId}]`, `GET /v2/bot/user/all/richmenu` - Default rich menu
+- `POST` / `DELETE` / `GET /v2/bot/user/{userId}/richmenu[/{richMenuId}]` - Per-user rich menu
+- `POST /v2/bot/richmenu/bulk/link` / `bulk/unlink` - Link or unlink a rich menu for up to 500 users
+- `POST /v2/bot/richmenu/batch`, `validate/batch`, `GET progress/batch` - Batch control (applied synchronously)
+- `/v2/bot/richmenu/alias` - Create, update, get, list and delete rich menu aliases
+
+As on the LINE Platform, a rich menu needs an uploaded image before it can be linked or set as default,
+and an image can be uploaded only once.
+
+### Quota
+- `GET /v2/bot/message/quota` - Always `none` (no limit)
+- `GET /v2/bot/message/quota/consumption` - Messages sent this month, counted per recipient; replies are free
+
+### Insight
+- `GET /v2/bot/insight/followers` - Current number of followers, for any date
+- `GET /v2/bot/insight/demographic` - Always unavailable
+- `GET /v2/bot/insight/message/event/aggregation` - Always empty, with null overview values
+- `GET /v2/bot/insight/message/delivery`, `GET /v2/bot/insight/message/event` - Always unready or empty
 
 For a complete list of endpoints, refer to the [OpenAPI specification](./line-openapi/messaging-api.yml).
 
@@ -114,6 +132,9 @@ See the [OpenAPI specification](./api/adminapi/openapi.yaml) for request and res
   and the response reports whether the endpoint accepted it.
 - `GET /admin/bots/{botId}/users/{userId}/messages` - List what the bot sent to a user by push, reply,
   multicast, narrowcast or broadcast, with the message objects exactly as the bot sent them
+
+- `GET /admin/bots/{botId}/users/{userId}/rich-menu` - Get the rich menu the user sees: the per-user
+  rich menu when one is linked, otherwise the bot's default rich menu
 
 Reply tokens are issued by webhook events, and a reply with a token the emulator didn't issue is rejected.
 
@@ -161,6 +182,11 @@ The project uses `golangci-lint` for comprehensive code analysis.
 The server accepts the following command-line options:
 
 - `--port` - HTTP port number (default: 9090)
+- `--database-url` / `DATABASE_URL` - PostgreSQL connection string
+- `--skip-schema` / `SKIP_SCHEMA` - Don't create missing tables and indexes at startup
+
+At startup the server creates the tables and indexes that don't exist yet, so an empty database is enough to run it.
+It doesn't alter existing tables.
 - `--help` - Display help information
 
 Example:

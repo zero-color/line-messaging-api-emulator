@@ -43,3 +43,20 @@ WHERE m.bot_id = @bot_id
     ))
   )
 ORDER BY m.created_at, m.id;
+
+
+-- name: CountMessagesSentSince :one
+-- Number of messages counted towards the quota since the given time.
+-- Each message object sent to each recipient counts as one; reply messages are free.
+-- Broadcast and narrowcast messages are counted against the current number of followers.
+SELECT COALESCE(SUM(
+    jsonb_array_length(m.content) * CASE m.message_type
+        WHEN 'push' THEN 1
+        WHEN 'multicast' THEN cardinality(string_to_array(m.recipient_id, ','))
+        WHEN 'broadcast' THEN (SELECT COUNT(*) FROM bot_followers bf WHERE bf.bot_id = m.bot_id)
+        WHEN 'narrowcast' THEN (SELECT COUNT(*) FROM bot_followers bf WHERE bf.bot_id = m.bot_id)
+        ELSE 0
+    END
+), 0)::bigint AS total
+FROM messages m
+WHERE m.bot_id = @bot_id AND m.created_at >= @since;

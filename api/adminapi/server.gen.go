@@ -56,6 +56,13 @@ const (
 	Unfollow SendUserEventRequestType = "unfollow"
 )
 
+// Defines values for UserRichMenuResponseSource.
+const (
+	Default UserRichMenuResponseSource = "default"
+	None    UserRichMenuResponseSource = "none"
+	User    UserRichMenuResponseSource = "user"
+)
+
 // BotInfoResponse defines model for BotInfoResponse.
 type BotInfoResponse struct {
 	// BasicId Bot's basic ID
@@ -246,6 +253,24 @@ type SendUserEventResponse struct {
 	WebhookEventId string `json:"webhookEventId"`
 }
 
+// UserRichMenuResponse defines model for UserRichMenuResponse.
+type UserRichMenuResponse struct {
+	// RichMenu Rich menu object exactly as the bot created it, with its richMenuId. Not included when source is `none`.
+	RichMenu *map[string]interface{} `json:"richMenu,omitempty"`
+
+	// Source Where the displayed rich menu comes from.
+	// - `user`: A rich menu linked to the user
+	// - `default`: The bot's default rich menu
+	// - `none`: The user sees no rich menu
+	Source UserRichMenuResponseSource `json:"source"`
+}
+
+// UserRichMenuResponseSource Where the displayed rich menu comes from.
+// - `user`: A rich menu linked to the user
+// - `default`: The bot's default rich menu
+// - `none`: The user sees no rich menu
+type UserRichMenuResponseSource string
+
 // BotId defines model for BotId.
 type BotId = string
 
@@ -275,6 +300,9 @@ type ServerInterface interface {
 	// List messages a user received from a bot
 	// (GET /admin/bots/{botId}/users/{userId}/messages)
 	ListUserMessages(w http.ResponseWriter, r *http.Request, botId BotId, userId UserId)
+	// Get the rich menu a user sees
+	// (GET /admin/bots/{botId}/users/{userId}/rich-menu)
+	GetUserRichMenu(w http.ResponseWriter, r *http.Request, botId BotId, userId UserId)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -302,6 +330,12 @@ func (_ Unimplemented) SendUserEvent(w http.ResponseWriter, r *http.Request, bot
 // List messages a user received from a bot
 // (GET /admin/bots/{botId}/users/{userId}/messages)
 func (_ Unimplemented) ListUserMessages(w http.ResponseWriter, r *http.Request, botId BotId, userId UserId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get the rich menu a user sees
+// (GET /admin/bots/{botId}/users/{userId}/rich-menu)
+func (_ Unimplemented) GetUserRichMenu(w http.ResponseWriter, r *http.Request, botId BotId, userId UserId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -412,6 +446,40 @@ func (siw *ServerInterfaceWrapper) ListUserMessages(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListUserMessages(w, r, botId, userId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetUserRichMenu operation middleware
+func (siw *ServerInterfaceWrapper) GetUserRichMenu(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "botId" -------------
+	var botId BotId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "botId", chi.URLParam(r, "botId"), &botId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "botId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "userId" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", chi.URLParam(r, "userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetUserRichMenu(w, r, botId, userId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -545,6 +613,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/admin/bots/{botId}/users/{userId}/messages", wrapper.ListUserMessages)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/admin/bots/{botId}/users/{userId}/rich-menu", wrapper.GetUserRichMenu)
 	})
 
 	return r
@@ -721,6 +792,42 @@ func (response ListUserMessages500JSONResponse) VisitListUserMessagesResponse(w 
 	return json.NewEncoder(w).Encode(response)
 }
 
+type GetUserRichMenuRequestObject struct {
+	BotId  BotId  `json:"botId"`
+	UserId UserId `json:"userId"`
+}
+
+type GetUserRichMenuResponseObject interface {
+	VisitGetUserRichMenuResponse(w http.ResponseWriter) error
+}
+
+type GetUserRichMenu200JSONResponse UserRichMenuResponse
+
+func (response GetUserRichMenu200JSONResponse) VisitGetUserRichMenuResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUserRichMenu404JSONResponse ErrorResponse
+
+func (response GetUserRichMenu404JSONResponse) VisitGetUserRichMenuResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUserRichMenu500JSONResponse ErrorResponse
+
+func (response GetUserRichMenu500JSONResponse) VisitGetUserRichMenuResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// Create a new bot
@@ -735,6 +842,9 @@ type StrictServerInterface interface {
 	// List messages a user received from a bot
 	// (GET /admin/bots/{botId}/users/{userId}/messages)
 	ListUserMessages(ctx context.Context, request ListUserMessagesRequestObject) (ListUserMessagesResponseObject, error)
+	// Get the rich menu a user sees
+	// (GET /admin/bots/{botId}/users/{userId}/rich-menu)
+	GetUserRichMenu(ctx context.Context, request GetUserRichMenuRequestObject) (GetUserRichMenuResponseObject, error)
 }
 
 type StrictHandlerFunc = strictnethttp.StrictHTTPHandlerFunc
@@ -884,6 +994,33 @@ func (sh *strictHandler) ListUserMessages(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListUserMessagesResponseObject); ok {
 		if err := validResponse.VisitListUserMessagesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetUserRichMenu operation middleware
+func (sh *strictHandler) GetUserRichMenu(w http.ResponseWriter, r *http.Request, botId BotId, userId UserId) {
+	var request GetUserRichMenuRequestObject
+
+	request.BotId = botId
+	request.UserId = userId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetUserRichMenu(ctx, request.(GetUserRichMenuRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetUserRichMenu")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetUserRichMenuResponseObject); ok {
+		if err := validResponse.VisitGetUserRichMenuResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

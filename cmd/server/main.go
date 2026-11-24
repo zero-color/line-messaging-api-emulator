@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -16,6 +17,7 @@ import (
 type options struct {
 	Port        uint16 `description:"http port number" long:"port" default:"9090"`
 	DatabaseURL string `description:"PostgreSQL connection string" long:"database-url" env:"DATABASE_URL" default:"postgres://postgres:password@localhost:5432/line_emulator?sslmode=disable"`
+	SkipSchema  bool   `description:"don't create missing tables and indexes at startup" long:"skip-schema" env:"SKIP_SCHEMA"`
 }
 
 func main() {
@@ -46,6 +48,12 @@ func realMain() error {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer sqlDB.Close()
+
+	if !opts.SkipSchema {
+		if err := db.ApplySchema(context.Background(), sqlDB); err != nil {
+			return err
+		}
+	}
 
 	dbClient := db.NewClient(sqlDB)
 	webhookClient := webhook.NewClient()
